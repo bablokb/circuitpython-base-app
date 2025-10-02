@@ -21,13 +21,22 @@ class WifiImpl:
   def __init__(self,debug=False):
     """ constructor """
     self.debug = debug
-    self._http = None
-
-  def connect(self):
-    self._http = adafruit_requests.Session(socket)
+    self._requests = None
 
   def get(self,url):
-    return self._http.get(url)
+    return self.requests.get(url)
+
+  @property
+  def requests(self):
+    """ return requests-object """
+    if not self._requests:
+      self._requests = adafruit_requests.Session(socket)
+    return self._requests
+
+  @property
+  def pool(self):
+    """ for CPython, the socket-module is the pool-object """
+    return socket
 
   @property
   def radio(self):
@@ -37,7 +46,11 @@ class WifiImpl:
   @property
   def connected(self):
     """ emulate radio.connected """
-    return self._http is not None
+    return True
+
+  def connect(self):
+    """ noop - we assume we are always connected """
+    pass
 
 class HalPygame(HalBase):
   """ GENERIC_LINUX_PC specific HAL-class """
