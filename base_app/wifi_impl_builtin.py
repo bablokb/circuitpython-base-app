@@ -83,6 +83,13 @@ class WifiImpl:
       self._requests = adafruit_requests.Session(self._pool)
     return self._requests
 
+  # --- pool obect   --------------------------------------------------------
+
+  @property
+  def pool(self):
+    """ return pool-object """
+    return self._pool
+
   # --- return implementing radio   -----------------------------------------
 
   @property
