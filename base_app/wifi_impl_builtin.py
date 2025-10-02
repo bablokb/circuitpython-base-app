@@ -76,7 +76,8 @@ class WifiImpl:
 
   # --- return requests-object   --------------------------------------------
 
-  def _get_request(self):
+  @property
+  def requests(self):
     """ return requests-object """
     if not self._requests:
       self._requests = adafruit_requests.Session(self._pool)
@@ -96,7 +97,7 @@ class WifiImpl:
     self.connect()
     if self._debug:
       print(f"wifi: get({url})")
-    return self._get_request().get(url)
+    return self.requests.get(url)
 
   # --- execute transmit-command   ------------------------------------------
 
