@@ -3,12 +3,18 @@
 #
 # Author: Bernhard Bablok
 #
-# Website: https://github.com/pcb-pico-datalogger
+# Website: https://github.com/circuitpython-base-app
 #-----------------------------------------------------------------------------
 
 import builtins
-import rtc
 import time
+
+try:
+  import rtc
+  _dev_rtc = rtc.RTC()
+except:
+  # CPython
+  _dev_rtc = None
 
 # --- class ExtBase   ----------------------------------------------------------
 
@@ -38,14 +44,15 @@ class ExtBase:
 
   # --- constructor   --------------------------------------------------------
 
-  def __init__(self,rtc_ext,wifi=None,net_update=False,debug=False):
+  def __init__(self,rtc_ext,rtc_int=_dev_rtc,
+               wifi=None,net_update=False,debug=False):
     """ constructor """
 
     self._rtc_ext    = rtc_ext
     self._wifi       = wifi
     self._net_update = net_update
     self._debug      = debug
-    self._rtc_int    = rtc.RTC()
+    self._rtc_int    = rtc_int
     self._init_rtc()             # basic settings, clear alarms etc.
 
   # --- init wifi-object if not supplied   ----------------------------------

@@ -3,7 +3,7 @@
 #
 # Author: Bernhard Bablok
 #
-# Website: https://github.com/pcb-pico-datalogger
+# Website: https://github.com/circuitpython-base-app
 #-----------------------------------------------------------------------------
 
 import rtc
@@ -20,7 +20,7 @@ class ExtPCF8563(ExtBase):
     """ constructor """
 
     rtc = PCF_RTC(i2c)
-    super().__init__(rtc,wifi,net_update,debug)
+    super().__init__(rtc,wifi=wifi,net_update=net_update,debug=debug)
 
   # --- init rtc   -----------------------------------------------------------
 
