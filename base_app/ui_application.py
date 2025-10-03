@@ -214,6 +214,12 @@ class UIApplication:
 
   def run_once(self):
     """ single execution main processing """
+    self.run(once=True)
+
+  # --- run   ----------------------------------------------------------------
+
+  def run(self,once=False):
+    """ main processing """
 
     try:
       self.create_ui()      # ui-provider should buffer this for performance
@@ -228,5 +234,6 @@ class UIApplication:
         self.msg(f"failed to handle exception: {ex2=}")
       rc = False
 
-    self.shutdown(rc)                      # pygame will instead wait for quit
-    self._impl.deep_sleep()                # in case shutdown is a noop
+    if once:
+      self.shutdown(rc)                    # pygame will instead wait for quit
+      self._impl.deep_sleep()              # in case shutdown is a noop
