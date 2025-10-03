@@ -216,15 +216,35 @@ class UIApplication:
     """ single execution main processing """
     self.run(once=True)
 
+  # --- run at start of run()   ----------------------------------------------
+
+  def run_start(self):
+    """ Hook to execute at start of run(). Implement in subclass """
+    pass
+
+  # --- run at end of run()   ------------------------------------------------
+
+  def run_end(self):
+    """ Hook to execute at end of run(). Implement in subclass """
+    pass
+
+  # --- sleep for the configured interval   ----------------------------------
+
+  def run_sleep(self):
+    """ Override in subclass if necessary """
+    time.sleep(getattr(appconfig, "run_interval", 1))
+
   # --- run   ----------------------------------------------------------------
 
   def run(self,once=False):
     """ main processing """
 
     try:
+      self.run_start()
       self.create_ui()      # ui-provider should buffer this for performance
       self.update_data()
       self.update_display()
+      self.run_end()
       rc = True
     except Exception as ex1:
       self.msg(f"failed: {ex1=}")
@@ -237,3 +257,5 @@ class UIApplication:
     if once:
       self.shutdown(rc)                    # pygame will instead wait for quit
       self._impl.deep_sleep()              # in case shutdown is a noop
+    else:
+      run_sleep()
