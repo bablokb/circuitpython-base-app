@@ -3,7 +3,7 @@
 #
 # Author: Bernhard Bablok
 #
-# Website: https://github.com/circuitpython-base-app
+# Website: https://github.com/bablokb/circuitpython-base-app
 #-----------------------------------------------------------------------------
 
 import rtc

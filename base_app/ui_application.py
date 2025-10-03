@@ -4,8 +4,7 @@
 # Author: Bernhard Bablok
 # License: GPL3
 #
-# Website: https://github.com/bablokb/pico-e-ink-daily
-#
+# Website: https://github.com/bablokb/circuitpython-base-app
 # -------------------------------------------------------------------------
 
 # --- imports   -----------------------------------------------------------

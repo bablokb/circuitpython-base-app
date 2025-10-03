@@ -4,7 +4,7 @@
 # Author: Bernhard Bablok
 # License: GPL3
 #
-# Website: https://github.com/bablokb/cp-departure-monitor
+# Website: https://github.com/bablokb/circuitpython-base-app
 # ----------------------------------------------------------------------------
 
 from .hal_base import HalBase
