@@ -67,6 +67,12 @@ class HalPygame(HalBase):
     """ return wifi-interface """
     return WifiImpl(debug=debug)
 
+  def get_rtc_ext(self,net_update=False,debug=False):
+    """ return OS-RTC """
+    from ..rtc_ext.ext_base import ExtBase
+    i2c = board.I2C()
+    return ExtBase.create("OsRTC",i2c,net_update=net_update,debug=debug)
+
   def shutdown(self):
     """ leave program (here: wait for quit) """
     if not self._display:
