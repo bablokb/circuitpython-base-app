@@ -11,9 +11,9 @@
 import time
 from .ext_base import ExtBase
 
-# --- class NoRTC   ----------------------------------------------------------
+# --- class ExtOsRTC   ----------------------------------------------------------
 
-class NoRTC(ExtBase):
+class ExtOsRTC(ExtBase):
 
   # --- constructor   --------------------------------------------------------
 
