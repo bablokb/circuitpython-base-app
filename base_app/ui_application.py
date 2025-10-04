@@ -165,7 +165,7 @@ class UIApplication:
     # update UI with current model
     if not content:
       start = time.monotonic()
-      self._ui = self._uiprovider.update_ui()
+      self._ui = self._uiprovider.update_ui(self.data)
       duration = time.monotonic()-start
       self.msg(f"update_ui (uiprovider): {duration:f}s")
 
