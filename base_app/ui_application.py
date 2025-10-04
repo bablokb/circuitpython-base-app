@@ -258,4 +258,4 @@ class UIApplication:
       self.shutdown(rc)                    # pygame will instead wait for quit
       self._impl.deep_sleep()              # in case shutdown is a noop
     else:
-      run_sleep()
+      self.run_sleep()
