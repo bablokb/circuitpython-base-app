@@ -232,13 +232,16 @@ class UIApplication:
 
   def run_sleep(self):
     """ Override in subclass if necessary """
-    time.sleep(getattr(appconfig, "run_interval", 1))
+    interval = getattr(appconfig, "run_interval", 1)
+    sleep_time = max(0,interval-(time.monotonic()-self._run_start))
+    time.sleep(sleep_time)
 
   # --- run   ----------------------------------------------------------------
 
   def run(self,once=False):
     """ main processing """
 
+    self._run_start = time.monotonic()
     try:
       self.run_start()
       self.create_ui()      # ui-provider should buffer this for performance
