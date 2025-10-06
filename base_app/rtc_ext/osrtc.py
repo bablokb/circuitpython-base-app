@@ -17,10 +17,11 @@ class ExtOsRTC(ExtBase):
 
   # --- constructor   --------------------------------------------------------
 
-  def __init__(self,i2c,wifi=None,net_update=False):
+  def __init__(self,i2c,wifi=None,net_update=False,debug=False):
     """ constructor """
 
-    super().__init__(self,rtc_int=self,wifi=wifi,net_update=net_update)
+    super().__init__(self, rtc_int=self,
+                     wifi=wifi, net_update=net_update, debug=debug)
 
   # --- check power-state   --------------------------------------------------
 
@@ -35,6 +36,6 @@ class ExtOsRTC(ExtBase):
     return time.localtime()
 
   @datetime.setter
-  def datetime(self, value: struct_time):
+  def datetime(self, value: time.struct_time):
     """ we don't set the system-time from an application program """
     pass
