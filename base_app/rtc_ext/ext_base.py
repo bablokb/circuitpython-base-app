@@ -192,7 +192,7 @@ class ExtBase:
       # externally provided time
       if isinstance(new_time,int):
         new_time = time.localtime(new_time)
-      print("rtc: updating RTCs from provided time")
+      self._msg("rtc: updating RTCs from provided time")
       self._rtc_ext.datetime = new_time
       self._rtc_int.datetime = new_time
       self.print_ts("rtc: new time",new_time)
@@ -204,25 +204,25 @@ class ExtBase:
       if force or self._lost_power() or self._check_rtc(self._rtc_ext):
         self.print_ts("rtc: ext-rtc time",self._rtc_ext.datetime)
         if not self._fetch_time():
-          print("rtc: ext-rtc not updated from time-server")
-          print("rtc: setting ext-rtc to 2022-01-01 12:00:00")
+          self._msg("rtc: ext-rtc not updated from time-server")
+          self._msg("rtc: setting ext-rtc to 2022-01-01 12:00:00")
           self._rtc_ext.datetime = time.struct_time((2022,1,1,12,00,00,5,1,-1))
           rc = ExtBase.TIME_SOURCE_NONE
         else:
-          print("rtc: ext-rtc updated from time-server")
+          self._msg("rtc: ext-rtc updated from time-server")
           rc = ExtBase.TIME_SOURCE_NET
       else:
         rc = ExtBase.TIME_SOURCE_EXT
-      print("rtc: updating internal rtc from external rtc")
+      self._msg("rtc: updating internal rtc from external rtc")
       ext_ts = self._rtc_ext.datetime   # needs two statements!
       self._rtc_int.datetime = ext_ts
       self.print_ts("rtc: new time",ext_ts)
     else:
       # this will typically happen when starting from Thonny
-      print("rtc: assuming valid rtc int")
+      self._msg("rtc: assuming valid rtc int")
       int_ts = self._rtc_int.datetime   # needs two statements!
       self._rtc_ext.datetime = int_ts
-      print("rtc: updated external rtc from internal rtc")
+      self._msg("rtc: updated external rtc from internal rtc")
       rc = ExtBase.TIME_SOURCE_INT
     return rc
 
@@ -232,7 +232,7 @@ class ExtBase:
     """ update time from time-server """
 
     if not self._net_update:
-      print("rtc: net_update not set")
+      self._msg("rtc: net_update not set")
       return False
 
     try:
@@ -242,7 +242,7 @@ class ExtBase:
       response = self._wifi.get(secrets.time_url).json()
       self._wifi.radio.enabled = False
     except Exception as ex:
-      print(f"rtc: update from time-server failed (no wifi?): {ex}")
+      self._msg(f"rtc: update from time-server failed (no wifi?): {ex}")
       return False
 
     if 'struct_time' in response:
