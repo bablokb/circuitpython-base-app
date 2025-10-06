@@ -234,7 +234,10 @@ class UIApplication:
     """ Override in subclass if necessary """
     interval = getattr(app_config, "run_interval", 1)
     sleep_time = max(0,interval-(time.monotonic()-self._run_start))
-    time.sleep(sleep_time)
+
+    # note: this needs to call self._impl.sleep() to give the PyGame-HAL
+    #       a chance to check for quit
+    self._impl.sleep(sleep_time)
 
   # --- run   ----------------------------------------------------------------
 
