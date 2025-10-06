@@ -232,7 +232,7 @@ class UIApplication:
 
   def run_sleep(self):
     """ Override in subclass if necessary """
-    interval = getattr(appconfig, "run_interval", 1)
+    interval = getattr(app_config, "run_interval", 1)
     sleep_time = max(0,interval-(time.monotonic()-self._run_start))
     time.sleep(sleep_time)
 
