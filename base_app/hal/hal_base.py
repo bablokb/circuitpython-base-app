@@ -12,10 +12,6 @@
 
 import board
 import time
-try:
-  import alarm
-except:
-  pass
 from digitalio import DigitalInOut, Direction
 
 try:
@@ -186,6 +182,7 @@ class HalBase:
       ds(alarms)
     else:
       try:
+        import alarm
         alarm.exit_and_deep_sleep_until_alarms(*alarms)
       except:
         while True:
