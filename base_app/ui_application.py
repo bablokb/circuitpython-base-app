@@ -40,7 +40,7 @@ class UIApplication:
     if self._rtc_ext:
       self._rtc_ext.update(force=self._impl.check_key("key_upd"))
     self._dataprovider = dataprovider
-    self._dataprovider.set_wifi(self._impl.wifi(debug=secrets.debugflag))
+    self._dataprovider.set_wifi(self.wifi)
     self._uiprovider = uiprovider
     self.data = {}
 
@@ -70,7 +70,7 @@ class UIApplication:
 
     self._impl = self._get_hal().impl
     self._impl.debug = self._debug
-    
+
     self.display    = self._impl.get_display()
     self.is_pygame  = hasattr(self.display,"check_quit")
     self.wifi       = self._impl.wifi(self._debug)
