@@ -94,14 +94,18 @@ class HalBase:
 
   def wifi(self,debug=False):
     """ return wifi-interface """
-    try:
+    if hasattr(hw_config,"get_wifi"):
       # try possible override in hw_config first
-      return hw_config.get_wifi(self, debug=debug)
-    except Exception as ex:
-      self.msg(f"hw_config.get_wifi() failed: {ex}")
-      # use default implementation
-      from ..wifi_impl_builtin import WifiImpl
-      return WifiImpl(debug=debug)
+      try:
+        return hw_config.get_wifi(self, debug=debug)
+      except NotImplementedError:
+        pass
+      except Exception as ex:
+        self.msg(f"hw_config.get_wifi() failed: {ex}")
+        raise
+    # use default implementation (also as fallback)
+    from ..wifi_impl_builtin import WifiImpl
+    return WifiImpl(debug=debug)
 
   def get_display(self):
     """ return display """
@@ -113,10 +117,44 @@ class HalBase:
         self._display = self._display(self)
     return self._display
 
+  def _get_rtc_ext(self, net_update=False, debug=False):
+    """ default implementation: try to create RTC by name """
+    try:
+      from base_app.rtc_ext.ext_base import ExtBase
+      RTC = getattr(hw_config,"RTC",None)
+      if not RTC:
+        try:
+          return ExtBase.create("",None,net_update=net_update,debug=debug)
+        except Exception as ex2:
+          # this is not expected to happen
+          self.msg("Could not create NoRTC")
+          self.msg(f"Reason: {ex2}")
+          return None
+
+      if self.I2C:
+        self._i2c = self.I2C()
+      else:
+        import busio
+        self._i2c = busio.I2C(self.SCL,self.SDA)
+      return ExtBase.create(RTC,self._i2c,net_update=net_update,debug=debug)
+    except Exception as ex:
+      if debug:
+        self.msg(f"Could not create RTC for {RTC}. Falling back to NoRTC.")
+        self.msg(f"Reason: {ex}")
+      try:
+        return ExtBase.create("",None,net_update=net_update,debug=debug)
+      except Exception as ex3:
+        self.msg("Could not create NoRTC")
+        self.msg(f"Reason: {ex3}")
+      return None
+
   def get_rtc_ext(self,net_update=False,debug=False):
     """ return external rtc, if available """
     try:
-      return hw_config.get_rtc_ext(net_update=net_update,debug=debug)
+      if hasattr(hw_config,"get_rtc_ext"):
+        return hw_config.get_rtc_ext(net_update=net_update,debug=debug)
+      else:
+        return self._get_rtc_ext(net_update=net_update,debug=debug)
     except:
       return None
 
@@ -139,6 +177,10 @@ class HalBase:
       pass
     try:
       self._keypad.deinit()
+    except:
+      pass
+    try:
+      self._i2c.deinit()
     except:
       pass
 
