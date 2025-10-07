@@ -96,7 +96,7 @@ class HalBase:
     """ return wifi-interface """
     try:
       # try possible override in hw_config first
-      return hw_config.get_wifi(debug=debug)
+      return hw_config.get_wifi(self, debug=debug)
     except:
       # use default implementation
       from ..wifi_impl_builtin import WifiImpl
