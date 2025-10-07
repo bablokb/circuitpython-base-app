@@ -98,15 +98,21 @@ class HalBase:
 
   def wifi(self,debug=False):
     """ return wifi-interface """
-    from ..wifi_impl_builtin import WifiImpl
-    return WifiImpl(debug=debug)
+    try:
+      # try possible override in hw_config first
+      return hw_config.get_wifi(debug=debug)
+    except:
+      # use default implementation
+      from ..wifi_impl_builtin import WifiImpl
+      return WifiImpl(debug=debug)
 
   def get_display(self):
     """ return display """
     if not self._display:
       self._display = self._get_attrib('DISPLAY')
+      # this is either an object, typically board.DISPLAY, or a
+      # method from hw_config. If it is a method, call it to get the object.
       if callable(self._display):
-        # from hw_config!
         self._display = self._display(self)
     return self._display
 
@@ -120,6 +126,8 @@ class HalBase:
   def shutdown(self):
     """ shutdown system """
     shutdown = self._get_attrib('shutdown')
+    # we don't want an endless loop, so call shutdown only if it is
+    # overriden in hw_config or a subclass
     if shutdown and shutdown != self.shutdown:
       shutdown()
 
