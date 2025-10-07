@@ -97,7 +97,8 @@ class HalBase:
     try:
       # try possible override in hw_config first
       return hw_config.get_wifi(self, debug=debug)
-    except:
+    except Exception as ex:
+      self.msg(f"hw_config.get_wifi() failed: {ex}")
       # use default implementation
       from ..wifi_impl_builtin import WifiImpl
       return WifiImpl(debug=debug)
