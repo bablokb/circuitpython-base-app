@@ -228,16 +228,27 @@ class UIApplication:
     """ Hook to execute at end of run(). Implement in subclass """
     pass
 
-  # --- sleep for the configured interval   ----------------------------------
+  # --- process events (e.g. key-presses)   ----------------------------------
 
-  def run_sleep(self):
+  def process_events(self):
+    """ process events while idle. Should be overriden by subclasses.
+    Returning True will stop idle-processing.
+    """
+
+    # note: calling self._impl.sleep() to give the PyGame-HAL
+    #       a chance to check for quit
+    self._impl.sleep(0.01)
+    return False
+
+  # --- process events for the configured interval   -------------------------
+
+  def run_idle(self):
     """ Override in subclass if necessary """
     interval = getattr(app_config, "run_interval", 1)
-    sleep_time = max(0,interval-(time.monotonic()-self._run_start))
 
-    # note: this needs to call self._impl.sleep() to give the PyGame-HAL
-    #       a chance to check for quit
-    self._impl.sleep(sleep_time)
+    while time.monotonic()-self._run_start < interval:
+      if self.process_events():
+        return
 
   # --- run   ----------------------------------------------------------------
 
@@ -264,4 +275,4 @@ class UIApplication:
       self.shutdown(rc)                    # pygame will instead wait for quit
       self._impl.deep_sleep()              # in case shutdown is a noop
     else:
-      self.run_sleep()
+      self.run_idle()
