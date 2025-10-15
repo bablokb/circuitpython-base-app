@@ -22,14 +22,19 @@ from simple_uiprovider import UIProvider
 # --- wait for connected console   -------------------------------------------
 
 def wait_for_console(duration=5):
-  """ wait for serial connection """
-  import supervisor
+  """ wait for serial connection.
+  If there is no supervisor, we are on CPython and don't have to wait.
+  """
   import board
-  import time
-  elapsed = time.monotonic() + duration
-  while (not supervisor.runtime.serial_connected and
-             time.monotonic() < elapsed):
-    time.sleep(1)
+  try:
+    import supervisor
+    import time
+    elapsed = time.monotonic() + duration
+    while (not supervisor.runtime.serial_connected and
+           time.monotonic() < elapsed):
+      time.sleep(1)
+  except:
+    pass
   print(f"running on board {board.board_id}")
 
 # --- cleanup at exit   ------------------------------------------------------
