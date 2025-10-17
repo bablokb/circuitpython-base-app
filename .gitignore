@@ -3,7 +3,7 @@ work
 TODO
 src/lib/adafruit*
 src/local
+src/settings.py
 local
 *secrets.py
-settings.py
 __pycache__
