@@ -32,6 +32,9 @@ class HalBadger2040W(HalBase):
     """ turn off power by pulling enable pin low """
     board.ENABLE_DIO.value = 0
 
+  def get_keypad(self):
+    """ return configured keypad """
+
     if not self._keypad:
       import keypad
       self._keypad = keypad.Keys(
