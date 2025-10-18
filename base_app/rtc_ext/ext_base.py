@@ -240,7 +240,6 @@ class ExtBase:
         self._init_wifi()
       from settings import secrets
       response = self._wifi.get(secrets.time_url).json()
-      self._wifi.radio.enabled = False
     except Exception as ex:
       self._msg(f"rtc: update from time-server failed (no wifi?): {ex}")
       return False
