@@ -16,7 +16,7 @@ from .hal_base import HalBase
 class HalBadger2040W(HalBase):
   """ Badger2040W specific HAL-class """
 
-  def _init_led(self,value):
+  def _init_led(self):
     """ initialize LED/Neopixel """
     if not hasattr(self,"_led"):
       self._led = DigitalInOut(board.USER_LED)
