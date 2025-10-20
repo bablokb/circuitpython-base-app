@@ -19,6 +19,12 @@ class WifiImpl:
 
   # --- constructor   --------------------------------------------------------
 
+  _wifi_impl = None
+  def __new__(cls,debug=False):
+    if WifiImpl._wifi_impl:
+      return WifiImpl._wifi_impl
+    return super(WifiImpl,cls).__new__(cls)
+
   def __init__(self,debug=False):
     """ constructor """
 
@@ -32,6 +38,8 @@ class WifiImpl:
     self._pool     = None
     self._requests = None
     self._socket   = None
+
+    WifiImpl._wifi_impl = self
 
   # --- initialze and connect to AP and to remote-port   ---------------------
 
