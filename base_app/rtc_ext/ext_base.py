@@ -110,7 +110,7 @@ class ExtBase:
 
   # --- get alarm from table   ---------------------------------------------
 
-  def get_table_alarm(self,time_table):
+  def get_table_alarm(self,time_table, min_delta=2):
     """ get alarm from time-table.
         This is a list of daily entries in
         the form
@@ -122,6 +122,9 @@ class ExtBase:
         x_start and x_end are inclusive, i.e. (0,23,1),(0,59,1) will trigger
         every minute.
         Replace (h_start,h_end,h_inc) with None to skip a day.
+
+        min_delta force the alarm to be at least min_delta seconds in
+        the future.
     """
 
     now_epoch = time.time()                          # seconds since 01/01/1970
@@ -145,11 +148,11 @@ class ExtBase:
       (h_start,h_end,h_inc) = hours
       (m_start,m_end,m_inc) = minutes
       # iterate over all hours/minutes and find first time-point larger
-      # than now
+      # than now+min_delta
       for h in range(h_start,h_end+1,h_inc):
         for m in range(m_start,m_end+1,m_inc):
           alarm_epoch = sod + h*3600 + m*60
-          if alarm_epoch > now_epoch:
+          if alarm_epoch > now_epoch+min_delta:
             next_alarm = time.localtime(alarm_epoch)
             self.print_ts("rtc: next alarm",next_alarm)
             return next_alarm
