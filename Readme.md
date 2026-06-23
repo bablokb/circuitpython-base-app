@@ -20,9 +20,9 @@ The framework provides the following features:
   - An abstraction layer supporting different development boards. These
     typically provide buttons and other peripherals in a non-uniform way
     making hardware-agnostic programming complicated. Note that standard
-    CircuitPython abstractions like `board.DISPLAY` don't need and additional
+    CircuitPython abstractions like `board.DISPLAY` don't need an additional
     abstraction layer.
-  - A configuration layer for application specific hardware, e.g. for
+  - A configuration layer for *application specific hardware*, e.g. for
     displays that are not part of the development board and therefore lack
     a simple `board.DISPLAY` to access them.
   - A configuration system for network credentials.
@@ -35,7 +35,7 @@ Installation
 Add this repository as a submodule and link to the relevant library files
 using symbolic links:
 
-    git add submode https://github.com/bablokb/circuitpython-base-app/ external/base-app
+    git submodule add https://github.com/bablokb/circuitpython-base-app/ external/base-app
     mkdir src
     cd src
     ln -s ../external/base-app/base_app .
