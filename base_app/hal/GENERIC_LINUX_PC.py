@@ -8,6 +8,7 @@
 # ----------------------------------------------------------------------------
 
 import sys
+import os
 import time
 
 import socket
@@ -42,6 +43,22 @@ class WifiImpl:
   def radio(self):
     """ return ourselves as radio """
     return self
+
+  @property
+  def mac_address(self):
+    """ emulate radio.mac_address """
+    mac = None
+    try:
+      for d in sorted(os.listdir("/sys/class/net/")):
+        if d == "lo":
+          continue
+        with open(f"/sys/class/net/{d}/address") as a:
+          mac = a.readline()[:-1]
+          if mac != "00:00:00:00":
+            break
+    except:
+      pass
+    return mac
 
   @property
   def connected(self):
