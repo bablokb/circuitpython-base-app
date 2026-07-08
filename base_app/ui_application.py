@@ -65,6 +65,8 @@ class UIApplication:
       self.msg("info: using default implementation from HalBase")
     return hal
 
+  # --- setup attributes from hardware-env   ---------------------------------
+
   def _setup(self,with_rtc):
     """ setup hardware """
 
@@ -76,8 +78,11 @@ class UIApplication:
     self.wifi       = self._impl.wifi(self._debug)
 
     if with_rtc:
-      self._rtc_ext = self._impl.get_rtc_ext(net_update=True,debug=self._debug)
-
+      self._rtc_ext = self._impl.get_rtc_ext(
+        net_update=getattr(secrets,"net_update",False),
+        debug=self._debug)
+    else:
+      self._rtc_ext = None
     gc.collect()
 
   # --- check for power-off button press   -----------------------------------
