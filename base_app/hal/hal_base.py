@@ -217,16 +217,23 @@ class HalBase:
     else:
       self.msg("ckeck_key({name}): empty event-queue")
 
-  def deep_sleep(self,alarms=[]):
+  def deep_sleep(self, alarms=[], wakeup=None):
     """ activate deep-sleep """
 
     ds = getattr(hw_config,"deep_sleep",None)
     if ds:
-      ds(alarms)
+      ds(alarms=alarms, wakeup=wakeup)
     else:
       try:
         import alarm
-        alarm.exit_and_deep_sleep_until_alarms(*alarms)
+        if alarms:
+          alarm.exit_and_deep_sleep_until_alarms(*alarms)
+        elif wakeup:
+          time_alarm = alarm.time.TimeAlarm(epoch_time=wakeup)
+          alarm.exit_and_deep_sleep_until_alarms(time_alarm)
+        else:
+          # this does not wake up
+          alarm.exit_and_deep_sleep_until_alarms()
       except:
         while True:
           time.sleep(1)

@@ -196,18 +196,37 @@ class UIApplication:
 
   # --- shutdown device   ----------------------------------------------------
 
-  def shutdown(self,rc):
+  def shutdown(self,with_wakeup):
     """ turn off device after setting next wakeup """
-    self.msg(f"shutdown with {rc=}:")
-    if rc:
-      if self._rtc_ext and getattr(app_config,"time_table",None):
-        wakeup = self._rtc_ext.get_table_alarm(app_config.time_table)
-        self._rtc_ext.set_alarm(wakeup)
+
+    # calculate wakeup time (as struct_time)
+    wakeup = None
+    if with_wakeup:
+      if self._rtc_ext:
+        if "sleep_time" in data and data["sleep_time"]:
+          # sleep_time is in seconds, wakeup is a struct_time
+          wakeup = self._rtc_ext.get_alarm_time(s=data["sleep_time"])
+        elif "wake_time" in data and data["wake_time"]:
+          # wake_time should be a valid struct_time
+          if isinstance(wake_time,int):
+            wakeup = time.localtime(wake_time)
+          else:
+            wakeup = wake_time
+        elif hasattr(app_config,"time_table"):
+          # local time-table
+          wakeup = self._rtc_ext.get_table_alarm(app_config.time_table)
       else:
         self.msg("could not configure wakeup")
+    if wakeup is not None:
+      self.msg("shutdown with wakeup at: {self._rtc_ext.print_ts(wakeup)}")
+      self._rtc_ext.set_alarm(wakeup)
     else:
-      self.msg("not configuring wakeup due to exception")
+      self.msg("shutdown without wakeup")
+
+    # run shutdown. This could be a noop, so fall back to deep-sleep.
     self._impl.shutdown()
+    self._impl.deep_sleep(wakeup=wakeup)
+    return
 
   # --- cleanup ressources at exit   -----------------------------------------
 
@@ -267,17 +286,17 @@ class UIApplication:
       self.update_data()
       self.update_display()
       self.run_end()
-      rc = True
+      success = True
     except Exception as ex1:
       self.msg(f"failed: {ex1=}")
       try:
         self.handle_exception(ex1)
       except Exception as ex2:
         self.msg(f"failed to handle exception: {ex2=}")
-      rc = False
+      success = False
 
     if once:
-      self.shutdown(rc)                    # pygame will instead wait for quit
-      self._impl.deep_sleep()              # in case shutdown is a noop
+      # pygame will instead wait for quit
+      wakeup = self.shutdown(with_wakeup=success)
     else:
       self.run_idle()
