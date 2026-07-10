@@ -121,4 +121,31 @@ class HalPygame(HalBase):
       if self._display.check_quit():
         sys.exit(0)
 
+  def get_nvram(self):
+    """ return emulated nvram storage-location """
+    import os
+    from settings import app_config
+    nvram = os.path.join(os.path.expanduser('~'),
+                         ".local","share",app_config.app_name)
+    os.makedirs(nvram, mode=0o700, exist_ok=True)
+    return os.path.join(nvram,"nvram.data")
+
+  def nvram_read(self, offset, count):
+    """ emulate reading data from nvram """
+    result = bytearray(count)
+    nvram = self.get_nvram()
+    if not os.path.exists(nvram):
+      return result
+    with open(nvram,"rb") as f:
+      f.seek(offset)
+      data = f.read(count)
+    result[:len(data)] = data
+    return result
+
+  def nvram_write(self, offset, data):
+    """ emulating write data to nvram """
+    with open(self.get_nvram(),"wb") as f:
+      f.seek(offset)
+      f.write(data)
+
 impl = HalPygame()

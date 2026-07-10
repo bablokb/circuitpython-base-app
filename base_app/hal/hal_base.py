@@ -237,3 +237,17 @@ class HalBase:
       except:
         while True:
           time.sleep(1)
+
+  def nvram_read(self, offset, count):
+    """ read data from nvram """
+    import microcontroller
+    if not microcontroller.nvm:
+      raise NotImplementedError("nvram not available for this platform")
+    return microcontroller.nvm[offset:offset+count]
+
+  def nvram_write(self, offset, data):
+    """ write data to nvram """
+    import microcontroller
+    if not microcontroller.nvm:
+      raise NotImplementedError("nvram not available for this platform")
+    microcontroller.nvm[offset:offset+len(data)] = data
