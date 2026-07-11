@@ -46,10 +46,7 @@ class WifiImpl:
   def connect(self):
     """ initialize connection """
 
-    if not self._radio:
-      import wifi
-      self._radio = wifi.radio
-    if not self._radio.enabled:
+    if not self.radio.enabled:
       self._radio.enabled = True
       self._pool = None
       self._requests = None
@@ -102,7 +99,20 @@ class WifiImpl:
   @property
   def radio(self):
     """ return radio """
+    if not self._radio:
+      import wifi
+      self._radio = wifi.radio
     return self._radio
+
+  # --- return MAC address as string   --------------------------------------
+
+  @property
+  def mac_address(self):
+    """  return mac_address """
+    result = ""
+    for b in self.radio.mac_address:
+      result += f"{b:02x}:"
+    return result[:-1].upper()
 
   # --- execute get-request   -----------------------------------------------
 
@@ -130,6 +140,6 @@ class WifiImpl:
     """ disable radio """
 
     try:                                       # wifi might not be imported
-      self._radio.enabled = False
+      self.radio.enabled = False
     except:
       pass
