@@ -174,25 +174,30 @@ class UIApplication:
       duration = time.monotonic()-start
       self.msg(f"update_ui (uiprovider): {duration:f}s")
 
-    # and show content on screen
+    # update root_group ...
     start = time.monotonic()
     if content:
       self.display.root_group = content
     else:
       self.display.root_group = self._ui
-    if hasattr(self.display,"time_to_refresh"):
-      if self.display.time_to_refresh > 0.0:
-        # ttr will be >0 only if system is on running on USB-power
-        time.sleep(self.display.time_to_refresh)
-    try:
-      self.display.refresh()
-      if hasattr(self.display,"busy"):
-        while self.display.busy:
-          time.sleep(0.1)
-    except RuntimeError:
-      pass
-    duration = time.monotonic()-start
-    self.msg(f"update display: {duration:f}s")
+
+    # ... and show content on screen
+    if self.display.root_group:
+      if hasattr(self.display,"time_to_refresh"):
+        if self.display.time_to_refresh > 0.0:
+          # ttr will be >0 only if system is on running on USB-power
+          time.sleep(self.display.time_to_refresh)
+      try:
+        self.display.refresh()
+        if hasattr(self.display,"busy"):
+          while self.display.busy:
+            time.sleep(0.1)
+      except RuntimeError:
+        pass
+      duration = time.monotonic()-start
+      self.msg(f"update display: {duration:f}s")
+    else:
+      self.msg("no display update")
 
   # --- shutdown device   ----------------------------------------------------
 
