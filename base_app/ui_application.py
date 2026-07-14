@@ -179,6 +179,7 @@ class UIApplication:
     if content:
       self.display.root_group = content
     else:
+      self.msg(f"updating root_group with view (len: {len(self._ui)})")
       self.display.root_group = self._ui
 
     # ... and show content on screen
@@ -186,10 +187,13 @@ class UIApplication:
       if hasattr(self.display,"time_to_refresh"):
         if self.display.time_to_refresh > 0.0:
           # ttr will be >0 only if system is on running on USB-power
+          self.msg(f"waiting for time_to_refresh ({self.display.time_to_refresh})")
           time.sleep(self.display.time_to_refresh)
       try:
+        self.msg("refreshing...")
         self.display.refresh()
         if hasattr(self.display,"busy"):
+          self.msg("waiting while busy")
           while self.display.busy:
             time.sleep(0.1)
       except RuntimeError:
@@ -294,10 +298,12 @@ class UIApplication:
       success = True
     except Exception as ex1:
       self.msg(f"failed: {ex1=}")
-      try:
-        self.handle_exception(ex1)
-      except Exception as ex2:
-        self.msg(f"failed to handle exception: {ex2=}")
+      if not self._debug:
+        # don't show trace on device in debug mode (assume serial connection)
+        try:
+          self.handle_exception(ex1)
+        except Exception as ex2:
+          self.msg(f"failed to handle exception: {ex2=}")
       success = False
 
     if once:
