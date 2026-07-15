@@ -178,9 +178,11 @@ class UIApplication:
     start = time.monotonic()
     if content:
       self.display.root_group = content
-    else:
+    elif self._ui:
       self.msg(f"updating root_group with view (len: {len(self._ui)})")
       self.display.root_group = self._ui
+    else:
+      self.display.root_group = None
 
     # ... and show content on screen
     if self.display.root_group:
