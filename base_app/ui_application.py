@@ -306,6 +306,15 @@ class UIApplication:
           self.handle_exception(ex1)
         except Exception as ex2:
           self.msg(f"failed to handle exception: {ex2=}")
+      else:
+        import traceback
+        try:
+          # CircuitPython and CPython > 3.9
+          traceback.print_exception(ex1)
+        except:
+          # CPython prior to 3.10
+          traceback.print_exception(None, ex1, ex1.__traceback__)
+
       success = False
 
     if once:
