@@ -14,7 +14,7 @@ import time
 import board
 import gc
 
-from settings import secrets, hw_config, app_config
+from settings import secrets, app_config
 
 # --- application class   ----------------------------------------------------
 
@@ -30,7 +30,7 @@ class UIApplication:
 
     self._debug = getattr(app_config, "debug", False)
     self._setup(with_rtc)  # setup hardware
-    blink_time = getattr(hw_config,"led_blink_init",0.1)
+    blink_time = getattr(self,"led_blink_init",0.1)
     self.blink(blink_time)
 
     # check for power_off pin (unconditional, no automatic wake-up)
@@ -38,11 +38,31 @@ class UIApplication:
 
     # update internal rtc from external rtc/internet
     if self._rtc_ext:
-      self._rtc_ext.update(force=self._impl.check_key("key_upd"))
+      self._rtc_ext.update(force=self.hal.check_key("key_upd"))
     self._dataprovider = dataprovider
     self._dataprovider.set_wifi(self.wifi)
     self._uiprovider = uiprovider
     self.data = {}
+
+  # --- setup attributes from hardware-env   ---------------------------------
+
+  def _setup(self,with_rtc):
+    """ setup hardware """
+
+    self.hal = self._get_hal()
+    self.hal.debug = self._debug
+
+    self.display    = self.hal.display()
+    self.is_pygame  = hasattr(self.display,"check_quit")
+    self.wifi       = self.hal.wifi(self._debug)
+
+    if with_rtc:
+      self._rtc_ext = self.hal.get_rtc_ext(
+        net_update=getattr(secrets,"net_update",False),
+        debug=self._debug)
+    else:
+      self._rtc_ext = None
+    gc.collect()
 
   # --- get HAL   ------------------------------------------------------------
 
@@ -56,71 +76,51 @@ class UIApplication:
 
     try:
       hal_file = "base_app.hal."+board.board_id.replace(".","_")
-      hal = builtins.__import__(hal_file,None,None,["impl"],0)
+      hal_module = builtins.__import__(hal_file,None,None,["impl"],0)
       self.msg("using board-specific implementation")
     except Exception as ex:
       self.msg(f"info: no board specific HAL (ex: {ex})")
       hal_file = "base_app.hal.hal_default"
-      hal = builtins.__import__(hal_file,None,None,["impl"],0)
+      hal_module = builtins.__import__(hal_file,None,None,["impl"],0)
       self.msg("info: using default implementation from HalBase")
-    return hal
-
-  # --- setup attributes from hardware-env   ---------------------------------
-
-  def _setup(self,with_rtc):
-    """ setup hardware """
-
-    self._impl = self._get_hal().impl
-    self._impl.debug = self._debug
-
-    self.display    = self._impl.get_display()
-    self.is_pygame  = hasattr(self.display,"check_quit")
-    self.wifi       = self._impl.wifi(self._debug)
-
-    if with_rtc:
-      self._rtc_ext = self._impl.get_rtc_ext(
-        net_update=getattr(secrets,"net_update",False),
-        debug=self._debug)
-    else:
-      self._rtc_ext = None
-    gc.collect()
+    return hal_module.impl
 
   # --- check for power-off button press   -----------------------------------
 
   def _check_power_off(self):
     """ check power_off button """
 
-    if  self._impl.check_key("key_off"):
-      blink_time = getattr(hw_config,"led_blink_power_off",0.1)
+    if  self.hal.check_key("key_off"):
+      blink_time = getattr(self,"led_blink_power_off",0.1)
       for _ in range(3):
         self.blink(blink_time)
       time.sleep(1)                   # extra time for button release
-      self._impl.shutdown()           # direct shutdown, no wake-up
-      self._impl.deep_sleep()         # in case shutdown is noop
+      self.hal.shutdown()           # direct shutdown, no wake-up
+      self.hal.deep_sleep()         # in case shutdown is noop
 
   # --- print debug-message   ------------------------------------------------
 
   def msg(self,text):
     """ print (debug) message """
     if self._debug:
-      print(text)
+      print(f"ui_application: {text}")
 
   # --- blink status-led   ---------------------------------------------------
 
   def blink(self,duration,color=RED):
     """ blink status-led once for the given duration """
-    self._impl.led(1,color=color)
+    self.hal.led(1,color=color)
     time.sleep(duration)
-    self._impl.led(0,color=color)
+    self.hal.led(0,color=color)
 
   # --- update data from server   --------------------------------------------
 
   def update_data(self):
     """ update data """
 
-    blink_time = getattr(hw_config,"led_blink_data",0.3)
+    blink_time = getattr(self,"led_blink_data",0.3)
     self.blink(blink_time,color=UIApplication.RED)
-    self.data["bat_level"] = self._impl.bat_level()
+    self.data["bat_level"] = self.hal.bat_level()
 
     start = time.monotonic()
     self._dataprovider.update_data(self.data)
@@ -133,7 +133,7 @@ class UIApplication:
   def handle_exception(self,ex):
     """ pass exception of data-provider to ui-provider """
 
-    blink_time = getattr(hw_config,"led_blink_exception",0.6)
+    blink_time = getattr(self,"led_blink_exception",0.6)
     self.blink(blink_time,color=UIApplication.RED)
     start = time.monotonic()
     self.update_display(self._uiprovider.handle_exception(ex))
@@ -228,22 +228,24 @@ class UIApplication:
           wakeup = self._rtc_ext.get_table_alarm(app_config.time_table)
       else:
         self.msg("could not configure wakeup")
+
     if wakeup is not None:
-      self.msg("shutdown with wakeup at: {self._rtc_ext.print_ts(wakeup)}")
+      self.msg("shutdown/deep-sleep with wakeup at: " +
+               f"{self._rtc_ext.print_ts(wakeup)}")
       self._rtc_ext.set_alarm(wakeup)
     else:
-      self.msg("shutdown without wakeup")
+      self.msg("shutdown/deep-sleep without wakeup")
 
     # run shutdown. This could be a noop, so fall back to deep-sleep.
-    self._impl.shutdown()
-    self._impl.deep_sleep(wakeup=wakeup)
+    self.hal.shutdown()
+    self.hal.deep_sleep(wakeup=wakeup)
     return
 
   # --- cleanup ressources at exit   -----------------------------------------
 
   def at_exit(self):
     """ cleanup ressources """
-    self._impl.at_exit()
+    self.hal.at_exit()
 
   # --- run single execution   -----------------------------------------------
 
@@ -270,9 +272,9 @@ class UIApplication:
     Returning True will stop idle-processing.
     """
 
-    # note: calling self._impl.sleep() to give the PyGame-HAL
+    # note: calling self.hal.sleep() to give the PyGame-HAL
     #       a chance to check for quit
-    self._impl.sleep(0.01)
+    self.hal.sleep(0.01)
     return False
 
   # --- process events for the configured interval   -------------------------

@@ -72,6 +72,16 @@ class WifiImpl:
 class HalPygame(HalBase):
   """ GENERIC_LINUX_PC specific HAL-class """
 
+  def __init__(self):
+    """ constructor """
+
+    # set the defaults here first, because ...
+    self.RTC = "OsRTC"    # use OS-internal RTC
+    self.eink = False
+    self.gamut = "rgb16"
+    # the super constructor merges hw_config which might override these
+    super().__init__()
+
   def bat_level(self):
     """ return battery level """
     return 3.6
@@ -80,14 +90,9 @@ class HalPygame(HalBase):
     """ set status LED (not-supported)"""
     pass
 
-  def wifi(self,debug=False):
+  def get_wifi(self,debug=False):
     """ return wifi-interface """
     return WifiImpl(debug=debug)
-
-  def get_rtc_ext(self,net_update=False,debug=False):
-    """ return OS-RTC """
-    from ..rtc_ext.ext_base import ExtBase
-    return ExtBase.create("OsRTC",None,net_update=net_update,debug=debug)
 
   def shutdown(self):
     """ leave program (here: wait for quit) """

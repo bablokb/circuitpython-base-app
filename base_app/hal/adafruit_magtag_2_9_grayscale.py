@@ -18,6 +18,15 @@ from .hal_base import HalBase
 class HalMagtag(HalBase):
   """ Magtag specific HAL-class """
 
+  def __init__(self):
+    """ constructor """
+    super().__init__()
+    self.eink = True
+    self.gamut = "gray_4"
+    # BUTTONS is empty in super-class, but might be tweaked in hw_config
+    if not getattr(self,"BUTTONS",[]):
+      self.BUTTONS = [board.D14,board.D12,board.D15,board.D11]
+
   def bat_level(self):
     """ return battery level """
     from analogio import AnalogIn
@@ -26,16 +35,12 @@ class HalMagtag(HalBase):
     adc.deinit()
     return level
 
-  def get_keypad(self):
+  def get_keypad(self, hal):
     """ return configured keypad """
-
-    if not self._keypad:
-      import keypad
-      self._keypad = keypad.Keys(
-        [board.D14,board.D12,board.D15,board.D11],
-        value_when_pressed=False,pull=True,
-        interval=0.1,max_events=4
+    import keypad
+    return keypad.Keys(self.BUTTONS,
+      value_when_pressed=False,pull=True,
+      interval=0.1,max_events=4
       )
-    return self._keypad
 
 impl = HalMagtag()

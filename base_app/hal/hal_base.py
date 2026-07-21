@@ -17,35 +17,37 @@ from digitalio import DigitalInOut, Direction
 try:
   from settings import hw_config
 except:
-  pass
+  class Settings:
+    pass
+  hw_config = Settings()
 
 class HalBase:
   def __init__(self):
     """ constructor """
     self.debug = False
     self._display = None
+    self._wifi = None
     self._keypad = None
-    self.I2C  = self._get_attrib('I2C')
-    self.SDA  = self._get_attrib('SDA')
-    self.SCL  = self._get_attrib('SCL')
-    self.SPI  = self._get_attrib('SPI')
-    self.SCK  = self._get_attrib('SCK')
-    self.MOSI = self._get_attrib('MOSI')
-    self.MISO = self._get_attrib('MISO')
+    self._rtc_ext = None
+    self.BUTTONS = []     # override in subclass
+    self.RTC = "NoRTC"    # no external RTC: this will use the builtin RTC
 
-  def _get_attrib(self,attrib):
-    """ get attribute from hw_config, hal or board """
-    for obj in [hw_config, self, board]:
-      value = getattr(obj,attrib,None)
-      if not value is None:
-        return value
-    return value
+    # expose standard objects from board-module
+    for attr in ['DISPLAY', 'LED', 'NEOPIXEL',
+                 'I2C', 'SDA', 'SCL',
+                 'SPI', 'SCK', 'MOSI', 'MISO',]:
+      setattr(self, attr, getattr(board,attr,None))
+
+    # merge methods/attributes from hw_config
+    for attr in dir(hw_config):
+      if attr[0] != '_':
+        setattr(self, attr, getattr(hw_config,attr))
 
   def _init_led(self):
     """ initialize LED/Neopixel """
     if hasattr(self,'_led') or hasattr(self,'_pixel'):
       return
-    if hasattr(board,'NEOPIXEL'):
+    if self.NEOPIXEL:
       if not hasattr(self,'_pixel'):
         if hasattr(board,'NEOPIXEL_POWER'):
           # need to do this first,
@@ -56,7 +58,7 @@ class HalBase:
         self._pixel = neopixel.NeoPixel(board.NEOPIXEL,1,
                                         brightness=0.1,auto_write=False)
     else:
-      led = self._get_attrib('LED')
+      led = self.LED
       if led and not hasattr(self,'_led'):
         self._led = DigitalInOut(led)
         self._led.direction = Direction.OUTPUT
@@ -92,42 +94,42 @@ class HalBase:
     else:
       return 0.0
 
-  def wifi(self,debug=False):
+  def get_wifi(self,debug=False):
     """ return wifi-interface """
-    if hasattr(hw_config,"get_wifi"):
-      # try possible override in hw_config first
-      try:
-        return hw_config.get_wifi(self, debug=debug)
-      except NotImplementedError:
-        pass
-      except Exception as ex:
-        self.msg(f"hw_config.get_wifi() failed: {ex}")
-        raise
-    # use default implementation (also as fallback)
     from ..wifi_impl_builtin import WifiImpl
     return WifiImpl(debug=debug)
 
-  def get_display(self):
+  def wifi(self,debug=False):
+    """ return wifi-interface """
+    if not self._wifi:
+      self._wifi = self.get_wifi(debug=debug)
+    return self._wifi
+
+  def get_display(self, hal):
+    """ return display.
+    This is typically overriden in a subclass or hw_config for
+    boards without internal display.
+    """
+    return self.DISPLAY
+
+  def display(self):
     """ return display """
     if not self._display:
-      self._display = self._get_attrib('DISPLAY')
-      # this is either an object, typically board.DISPLAY, or a
-      # method from hw_config. If it is a method, call it to get the object.
-      if callable(self._display):
-        self._display = self._display(self)
+      self._display = self.get_display(self)
     return self._display
 
-  def _get_rtc_ext(self, net_update=False, debug=False):
+  def get_rtc_ext(self, net_update=False, debug=False):
     """ default implementation: try to create RTC by name """
     try:
       from base_app.rtc_ext.ext_base import ExtBase
-      RTC = getattr(hw_config,"RTC",None)
-      if not RTC:
+      RTC = getattr(self,"RTC","NoRTC")
+      if RTC in ["NoRTC", "OsRTC"]:
+        # these RTCs don't need the I2C-bus
         try:
-          return ExtBase.create("",None,net_update=net_update,debug=debug)
+          return ExtBase.create(RTC,None,net_update=net_update,debug=debug)
         except Exception as ex2:
           # this is not expected to happen
-          self.msg("Could not create NoRTC")
+          self.msg(f"Could not create {RTC}")
           self.msg(f"Reason: {ex2}")
           return None
 
@@ -142,29 +144,23 @@ class HalBase:
         self.msg(f"Could not create RTC for {RTC}. Falling back to NoRTC.")
         self.msg(f"Reason: {ex}")
       try:
-        return ExtBase.create("",None,net_update=net_update,debug=debug)
+        return ExtBase.create("NoRTC",None,net_update=net_update,debug=debug)
       except Exception as ex3:
         self.msg("Could not create NoRTC")
         self.msg(f"Reason: {ex3}")
       return None
 
-  def get_rtc_ext(self,net_update=False,debug=False):
+  def rtc_ext(self,net_update=False,debug=False):
     """ return external rtc, if available """
-    try:
-      if hasattr(hw_config,"get_rtc_ext"):
-        return hw_config.get_rtc_ext(net_update=net_update,debug=debug)
-      else:
-        return self._get_rtc_ext(net_update=net_update,debug=debug)
-    except:
-      return None
+    if not self._rtc_ext:
+      self._rtc_ext =  self.get_rtc_ext(net_update=net_update,debug=debug)
+    return self._rtc_ext
 
   def shutdown(self):
-    """ shutdown system """
-    shutdown = self._get_attrib('shutdown')
-    # we don't want an endless loop, so call shutdown only if it is
-    # overriden in hw_config or a subclass
-    if shutdown and shutdown != self.shutdown:
-      shutdown()
+    """ shutdown system.
+    Needs override in subclass or hw_config
+    """
+    pass
 
   def at_exit(self):
     """ exit processing """
@@ -188,25 +184,26 @@ class HalBase:
     """ sleep for the given duration in seconds """
     time.sleep(duration)
 
-  def get_keypad(self):
-    """ return configured keypad """
-    try:
-      if not self._keypad:
-        self._keypad = hw_config.get_keypad(self)
-        self._keypad.reset()
-        time.sleep(0.1)   # wait for keypad-scan (default scan-interval is 0.02)
-      return self._keypad
-    except:
-      return None
+  def get_keypad(self, hal):
+    """ return configured keypad.
+    Needs override in subclass or hw_config
+    """
+    return None
+
+  def keypad(self):
+    """ return configured keypad. """
+    if not self._keypad:
+      self._keypad = self.get_keypad(self)
+    return self._keypad
 
   def check_key(self,name):
     """ check if key is pressed """
 
-    nr = getattr(hw_config,name,None)
+    nr = getattr(self, name, None)
     self.msg(f"check_key({name}): {nr=}")
     if nr is None:
       return False
-    keypad = self.get_keypad()
+    keypad = self.keypad()
     if not keypad:
       return False
     queue = keypad.events
@@ -217,26 +214,32 @@ class HalBase:
     else:
       self.msg("ckeck_key({name}): empty event-queue")
 
-  def deep_sleep(self, alarms=[], wakeup=None):
-    """ activate deep-sleep """
+  def get_pin_alarms(self, hal):
+    """ return pin-alarms
+    Override in subclass or hw_config if necessary
+    """
+    if self._keypad:
+      self._keypad.deinit()
+    import alarm
+    alarms = []
+    for btn in self.BUTTONS:
+      alarms.append(alarm.pin.PinAlarm(btn,value=False,edge=True,pull=True))
+    return alarms
 
-    ds = getattr(hw_config,"deep_sleep",None)
-    if ds:
-      ds(alarms=alarms, wakeup=wakeup)
-    else:
-      try:
-        import alarm
-        if alarms:
-          alarm.exit_and_deep_sleep_until_alarms(*alarms)
-        elif wakeup:
-          time_alarm = alarm.time.TimeAlarm(epoch_time=wakeup)
-          alarm.exit_and_deep_sleep_until_alarms(time_alarm)
-        else:
-          # this does not wake up
-          alarm.exit_and_deep_sleep_until_alarms()
-      except:
-        while True:
-          time.sleep(1)
+  def deep_sleep(self, alarms=[], wakeup=None):
+    """ activate deep-sleep.
+    The default merges all alarms passed as arguments with
+    pin-alarms defined via get_pin_alarms().
+    """
+    try:
+      import alarm
+      all_alarms = self.get_pin_alarms(self)
+      all_alarms.extend(alarms)
+      if wakeup:
+        all_alarms.append(alarm.time.TimeAlarm(epoch_time=wakeup))
+    except:
+      while True:
+        time.sleep(1)
 
   def nvram_read(self, offset, count):
     """ read data from nvram """

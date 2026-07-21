@@ -127,8 +127,8 @@ hw_config.SDA = SDA_PIN
 hw_config.SCL = SCL_PIN
 
 # use factory methods (only set when implemented)
-hw_config.DISPLAY      = _get_display
-hw_config.RTC          = "PCF8523"               # for standard RTCs in rtc_ext/
+hw_config.get_display  = _get_display
+hw_config.RTC          = "PCF8523"        # for standard RTCs in rtc_ext/
 #hw_config.get_rtc_ext = _get_rtc_ext
 #hw_config.get_keypad  = _get_keypad
 #hw_config.get_wifi    = _get_wifi

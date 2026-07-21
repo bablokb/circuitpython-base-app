@@ -21,12 +21,9 @@ class HALInkyFrame57(HalBase):
     """ constructor """
     super().__init__()
     self.LED = board.LED_ACT
-
-  def get_rtc_ext(self,net_update=False,debug=False):
-    """ return external rtc, if available """
-    from ..rtc_ext.ext_base import ExtBase
-    i2c = board.I2C()
-    return ExtBase.create("PCF85063",i2c,net_update=net_update,debug=debug)
+    self.eink = True
+    self.gamut = "acep_7colour"
+    self.RTC = "PCF85063"
 
   def shutdown(self):
     """ turn off power by pulling enable pin low """
@@ -36,7 +33,7 @@ class HALInkyFrame57(HalBase):
   def _wait_for_display(self):
     """ wait for display update to finish """
 
-    keypad = self.get_keypad()
+    keypad = self.keypad()
 
     # we check the busy-pin of the shift-register
     queue = keypad.events
@@ -49,18 +46,16 @@ class HALInkyFrame57(HalBase):
         # i.e. busy-pin is high, so no longer busy
         return
 
-  def get_keypad(self):
+  def get_keypad(self, hal):
     """ return configured keypad """
 
-    if not self._keypad:
-      self._keypad = keypad.ShiftRegisterKeys(
-        clock = board.SWITCH_CLK,
-        data  = board.SWITCH_OUT,
-        latch = board.SWITCH_LATCH,
-        key_count = 8,
-        value_to_latch = True,
-        value_when_pressed = True
-      )
-    return self._keypad
+   return keypad.ShiftRegisterKeys(
+     clock = board.SWITCH_CLK,
+     data  = board.SWITCH_OUT,
+     latch = board.SWITCH_LATCH,
+     key_count = 8,
+     value_to_latch = True,
+     value_when_pressed = True
+     )
 
 impl = HALInkyFrame57()

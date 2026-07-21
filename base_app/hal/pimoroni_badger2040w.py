@@ -16,32 +16,27 @@ from .hal_base import HalBase
 class HalBadger2040W(HalBase):
   """ Badger2040W specific HAL-class """
 
-  def _init_led(self):
-    """ initialize LED/Neopixel """
-    if not hasattr(self,"_led"):
-      self._led = DigitalInOut(board.USER_LED)
-      self._led.direction = Direction.OUTPUT
-
-  def get_rtc_ext(self,net_update=False,debug=False):
-    """ return external rtc, if available """
-    from ..rtc_ext.ext_base import ExtBase
-    i2c = board.I2C()
-    return ExtBase.create("PCF85063",i2c,net_update=net_update,debug=debug)
-
+  def __init__(self):
+    """ constructor """
+    super().__init__()
+    self.LED = board.USER_LED
+    self.eink = True
+    self.gamut = "mono"
+    self.RTC = "PCF85063"
+    # BUTTONS is empty in super-class, but might be tweaked in hw_config
+    if not getattr(self,"BUTTONS",[]):
+      self.BUTTONS = [board.SW_A, board.SW_B, board.SW_C,
+                      board.SW_UP, board.SW_DOWN]
   def shutdown(self):
     """ turn off power by pulling enable pin low """
     board.ENABLE_DIO.value = 0
 
-  def get_keypad(self):
+  def get_keypad(self, hal):
     """ return configured keypad """
-
-    if not self._keypad:
-      import keypad
-      self._keypad = keypad.Keys(
-        [board.SW_A, board.SW_B, board.SW_C, board.SW_UP, board.SW_DOWN],
-        value_when_pressed=True,pull=True,
-        interval=0.1,max_events=4
-      )
-    return self._keypad
+    import keypad
+    return keypad.Keys(self.BUTTONS,
+                       value_when_pressed=True,pull=True,
+                       interval=0.1,max_events=4
+                       )
 
 impl = HalBadger2040W()
