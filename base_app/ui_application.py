@@ -29,6 +29,7 @@ class UIApplication:
     """ constructor """
 
     self._debug = getattr(app_config, "debug", False)
+    self.msg(f"running on board {board.board_id}")
     self._setup(with_rtc)  # setup hardware
     blink_time = getattr(self,"led_blink_init",0.1)
     self.blink(blink_time)
@@ -167,25 +168,20 @@ class UIApplication:
   def update_display(self,content=None):
     """ update display """
 
-    # update UI with current model
+    # an explicit content takes precedence. Otherwise
+    # update UI with current model and show the returned content
     if not content:
       start = time.monotonic()
-      self._ui = self._uiprovider.update_ui(self.data)
+      content = self._uiprovider.update_ui(self.data)
       duration = time.monotonic()-start
       self.msg(f"update_ui (uiprovider): {duration:f}s")
 
-    # update root_group ...
-    start = time.monotonic()
     if content:
-      self.display.root_group = content
-    elif self._ui:
-      self.msg(f"updating root_group with view (len: {len(self._ui)})")
-      self.display.root_group = self._ui
-    else:
-      self.display.root_group = None
+      start = time.monotonic()
+      self.msg(f"updating root_group with view (len: {len(content)})")
+      self.display.root_group = content  # update root_group ...
 
-    # ... and show content on screen
-    if self.display.root_group:
+      # ... and show content on screen
       if hasattr(self.display,"time_to_refresh"):
         if self.display.time_to_refresh > 0.0:
           # ttr will be >0 only if system is on running on USB-power
@@ -283,6 +279,7 @@ class UIApplication:
     """ Override in subclass if necessary """
     interval = getattr(app_config, "run_interval", 1)
 
+    self.msg(f"running idle for {interval}s")
     while time.monotonic()-self._run_start < interval:
       if self.process_events():
         return
