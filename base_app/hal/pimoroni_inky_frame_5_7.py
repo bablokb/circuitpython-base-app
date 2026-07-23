@@ -49,13 +49,13 @@ class HALInkyFrame57(HalBase):
   def get_keypad(self, hal):
     """ return configured keypad """
 
-   return keypad.ShiftRegisterKeys(
-     clock = board.SWITCH_CLK,
-     data  = board.SWITCH_OUT,
-     latch = board.SWITCH_LATCH,
-     key_count = 8,
-     value_to_latch = True,
-     value_when_pressed = True
-     )
+    return keypad.ShiftRegisterKeys(
+      clock = board.SWITCH_CLK,
+      data  = board.SWITCH_OUT,
+      latch = board.SWITCH_LATCH,
+      key_count = 8,
+      value_to_latch = True,
+      value_when_pressed = True
+      )
 
 impl = HALInkyFrame57()
