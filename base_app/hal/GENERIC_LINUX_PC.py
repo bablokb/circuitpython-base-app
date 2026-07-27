@@ -76,11 +76,12 @@ class HalPygame(HalBase):
     """ constructor """
 
     # set the defaults here first, because ...
-    self.RTC = "OsRTC"    # use OS-internal RTC
     self.eink = False
     self.gamut = "rgb16"
     # the super constructor merges hw_config which might override these
     super().__init__()
+    if self.RTC is None:
+      self.RTC = "OsRTC"    # use OS-internal RTC
 
   def bat_level(self):
     """ return battery level """

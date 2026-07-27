@@ -30,7 +30,7 @@ class HalBase:
     self._keypad = None
     self._rtc_ext = None
     self.BUTTONS = []     # override in subclass
-    self.RTC = "NoRTC"    # no external RTC: this will use the builtin RTC
+    self.RTC = None
 
     # expose standard objects from board-module
     for attr in ['DISPLAY', 'LED', 'NEOPIXEL',
@@ -122,14 +122,16 @@ class HalBase:
     """ default implementation: try to create RTC by name """
     try:
       from base_app.rtc_ext.ext_base import ExtBase
-      RTC = getattr(self,"RTC","NoRTC")
-      if RTC in ["NoRTC", "OsRTC"]:
+      _rtc = getattr(self,"RTC", None)
+      if _rtc is None:
+        _rtc = "NoRTC"
+      if _rtc in ["NoRTC", "OsRTC"]:
         # these RTCs don't need the I2C-bus
         try:
-          return ExtBase.create(RTC,None,net_update=net_update,debug=debug)
+          return ExtBase.create(_rtc,None,net_update=net_update,debug=debug)
         except Exception as ex2:
           # this is not expected to happen
-          self.msg(f"Could not create {RTC}")
+          self.msg(f"Could not create {_rtc}")
           self.msg(f"Reason: {ex2}")
           return None
 
