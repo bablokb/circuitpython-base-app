@@ -14,7 +14,7 @@ from .ext_base import ExtBase
 
 # --- class NoRTC   ----------------------------------------------------------
 
-class NoRTC(ExtBase):
+class ExtNoRTC(ExtBase):
 
   # --- constructor   --------------------------------------------------------
 

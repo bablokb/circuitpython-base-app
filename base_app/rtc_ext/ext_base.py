@@ -32,11 +32,9 @@ class ExtBase:
   def create(cls,rtc_name,bus,wifi=None,net_update=False,debug=False):
     """ create ExtRTC-object for given RTC-name """
     if not rtc_name:
-      rtc_classfile = "nortc"
-      rtc_classname = "NoRTC"
-    else:
-      rtc_classfile = rtc_name.lower()
-      rtc_classname = f"Ext{rtc_name}"
+      rtc_name = "NoRTC"
+    rtc_classfile = rtc_name.lower()
+    rtc_classname = f"Ext{rtc_name}"
     the_module = builtins.__import__(f"base_app.rtc_ext.{rtc_classfile}",
                                      None,None,[rtc_classfile],0)
     rtc_class = getattr(the_module,rtc_classname)
