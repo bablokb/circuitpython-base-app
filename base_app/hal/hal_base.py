@@ -156,6 +156,16 @@ class HalBase:
       self._rtc_ext =  self.get_rtc_ext(net_update=net_update,debug=debug)
     return self._rtc_ext
 
+  def update_rtc(self, ts):
+    """ update internal and external RTC.
+    ts: timestamp in unix-time or struct_time
+        If None, update from a time-server (worldtimeapi protocol)
+    """
+    if self.RTC == "OsRTC":   # skip OS-level rtc
+      return
+    rtc_ext = self.rtc_ext()
+    rtc_ext.update(new_time=ts)
+
   def shutdown(self):
     """ shutdown system.
     Needs override in subclass or hw_config
