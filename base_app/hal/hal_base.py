@@ -29,7 +29,8 @@ class HalBase:
     self._wifi = None
     self._keypad = None
     self._rtc_ext = None
-    self.BUTTONS = []     # override in subclass
+    self.BUTTONS = None     # ([pin, ...], value, pull)
+    self.WAKE_PINS = None   # ([pin, ...], value, edge, pull)
     self.RTC = None
 
     # expose standard objects from board-module
@@ -197,9 +198,14 @@ class HalBase:
     time.sleep(duration)
 
   def get_keypad(self, hal):
-    """ return configured keypad.
-    Needs override in subclass or hw_config
-    """
+    """ return configured keypad. """
+    if self.BUTTONS:
+      import keypad
+      return keypad.Keys(self.BUTTONS[0],
+                         value_when_pressed=self.BUTTONS[1],
+                         pull=self.BUTTONS[2],
+                         interval=0.1,max_events=4
+                         )
     return None
 
   def keypad(self):
@@ -234,8 +240,17 @@ class HalBase:
       self._keypad.deinit()
     import alarm
     alarms = []
-    for btn in self.BUTTONS:
-      alarms.append(alarm.pin.PinAlarm(btn,value=False,edge=True,pull=True))
+    # use self.WAKE_PINS if available, else fall back to self.BUTTONS
+    if hasattr(self, "WAKE_PINS"):
+      alarm_pins, value, edge, pull = getattr(self, "WAKE_PINS")
+    elif hasattr(self, "BUTTONS"):
+      alarm_pins, value, pull = self.BUTTONS
+      edge = False
+    else:
+      alarm_pins = []
+    for pin in alarm_pins:
+      alarms.append(alarm.pin.PinAlarm(pin,
+                                       value=value, edge=edge, pull=pull))
     return alarms
 
   def deep_sleep(self, alarms=[], wakeup=None):
@@ -246,10 +261,15 @@ class HalBase:
     try:
       import alarm
       all_alarms = self.get_pin_alarms(self)
+      self.msg(f"deep_sleep(): added {len(all_alarms)} internal alarms")
       all_alarms.extend(alarms)
+      self.msg(f"deep_sleep(): added {len(alarms)} from arguments")
       if wakeup:
         all_alarms.append(alarm.time.TimeAlarm(epoch_time=wakeup))
-    except:
+        self.msg(f"deep_sleep(): added TimeAlarm from argument")
+      alarm.exit_and_deep_sleep_until_alarms(*all_alarms)
+    except Exception as ex:
+      self.msg(f"could not enter deep-sleep. Exception: {ex}")
       while True:
         time.sleep(1)
 

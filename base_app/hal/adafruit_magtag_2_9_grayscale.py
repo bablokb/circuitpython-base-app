@@ -24,8 +24,16 @@ class HalMagtag(HalBase):
     self.eink = True
     self.gamut = "gray_4"
     # BUTTONS is empty in super-class, but might be tweaked in hw_config
-    if not getattr(self,"BUTTONS",[]):
-      self.BUTTONS = [board.D14,board.D12,board.D15,board.D11]
+    if not getattr(self,"BUTTONS",None):
+      # format is ([pin, ...], value, pull)
+      # left to right: left,       up,        down,      right
+      self.BUTTONS = ([board.D15, board.D14, board.D12, board.D11],
+                      False, True)
+    if not getattr(self,"WAKE_PINS",None):
+      # format is ([pin, ...], value, edge, pull)
+      # use left and right for deep-sleep alarm buttons
+      self.WAKE_PINS = ([board.D15, board.D11],
+                        False, False, True)
 
   def bat_level(self):
     """ return battery level """
@@ -34,13 +42,5 @@ class HalMagtag(HalBase):
     level = (adc.value / 65535.0) * 3.3 * 2
     adc.deinit()
     return level
-
-  def get_keypad(self, hal):
-    """ return configured keypad """
-    import keypad
-    return keypad.Keys(self.BUTTONS,
-      value_when_pressed=False,pull=True,
-      interval=0.1,max_events=4
-      )
 
 impl = HalMagtag()

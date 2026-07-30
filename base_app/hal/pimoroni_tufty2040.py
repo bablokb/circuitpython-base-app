@@ -23,16 +23,9 @@ class HalTufty2040(HalBase):
     self.eink = False
     self.gamut = "rgb16"
     # BUTTONS is empty in super-class, but might be tweaked in hw_config
-    if not getattr(self,"BUTTONS",[]):
-      self.BUTTONS = [board.SW_A, board.SW_B, board.SW_C,
-                      board.SW_UP, board.SW_DOWN]
-
-  def get_keypad(self, hal):
-    """ return configured keypad """
-    import keypad
-    return keypad.Keys(self.BUTTONS,
-                       value_when_pressed=True, pull=True,
-                       interval=0.1,max_events=4
-    )
+    if not getattr(self,"BUTTONS",None):
+      self.BUTTONS = ([board.SW_A, board.SW_B, board.SW_C,
+                       board.SW_UP, board.SW_DOWN],
+                      True, True)
 
 impl = HalTufty2040()
