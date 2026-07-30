@@ -58,7 +58,7 @@ class UIApplication:
     self.wifi       = self.hal.wifi(self._debug)
 
     if with_rtc:
-      self._rtc_ext = self.hal.get_rtc_ext(
+      self._rtc_ext = self.hal.rtc_ext(
         net_update=getattr(secrets,"net_update",False),
         debug=self._debug)
     else:
@@ -210,31 +210,31 @@ class UIApplication:
     wakeup = None
     if with_wakeup:
       if self._rtc_ext:
-        if "sleep_time" in data and data["sleep_time"]:
+        if hasattr(app_config,"time_table"):
+          # local time-table overrides application controlled wakeup
+          wakeup = self._rtc_ext.get_table_alarm(app_config.time_table)
+        elif "sleep_time" in self.data and self.data["sleep_time"]:
           # sleep_time is in seconds, wakeup is a struct_time
-          wakeup = self._rtc_ext.get_alarm_time(s=data["sleep_time"])
-        elif "wake_time" in data and data["wake_time"]:
+          wakeup = self._rtc_ext.get_alarm_time(s=self.data["sleep_time"])
+        elif "wake_time" in self.data and self.data["wake_time"]:
           # wake_time should be a valid struct_time
           if isinstance(wake_time,int):
             wakeup = time.localtime(wake_time)
           else:
             wakeup = wake_time
-        elif hasattr(app_config,"time_table"):
-          # local time-table
-          wakeup = self._rtc_ext.get_table_alarm(app_config.time_table)
       else:
         self.msg("could not configure wakeup")
 
     if wakeup is not None:
       self.msg("shutdown/deep-sleep with wakeup at: " +
-               f"{self._rtc_ext.print_ts(wakeup)}")
+               f"{self._rtc_ext.print_ts(None,wakeup)}")
       self._rtc_ext.set_alarm(wakeup)
     else:
       self.msg("shutdown/deep-sleep without wakeup")
 
     # run shutdown. This could be a noop, so fall back to deep-sleep.
     self.hal.shutdown()
-    self.hal.deep_sleep(wakeup=wakeup)
+    self.hal.deep_sleep(wakeup=time.mktime(wakeup) if wakeup else None)
     return
 
   # --- cleanup ressources at exit   -----------------------------------------
