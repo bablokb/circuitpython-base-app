@@ -1,6 +1,10 @@
 # ----------------------------------------------------------------------------
 # pimoroni_badger2040w.py: HAL for Pimoroni Badger2040W
 #
+# The Badger2040W supports hardware shutdown, so you usually don't want
+# to use deep-sleep and the definition of WAKE_PINS is not really
+# relevant. But it does not hurt either.
+#
 # Author: Bernhard Bablok
 # License: GPL3
 #
