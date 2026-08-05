@@ -101,10 +101,19 @@ class UIApplication:
 
   # --- print debug-message   ------------------------------------------------
 
-  def msg(self,text):
+  def msg(self,*args):
     """ print (debug) message """
     if self._debug:
-      print(f"ui_application: {text}")
+      print(f"ui_application:", end="")
+      for arg in args:
+        if isinstance(arg, time.struct_time):
+          print(" %04d-%02d-%02d %02d:%02d:%02d" % (
+            arg.tm_year, arg.tm_mon, arg.tm_mday,
+            arg.tm_hour, arg.tm_min, arg.tm_sec
+            ), end="")
+        else:
+          print(f" {arg}", end="")
+    print()
 
   # --- blink status-led   ---------------------------------------------------
 
@@ -226,8 +235,7 @@ class UIApplication:
         self.msg("could not configure wakeup")
 
     if wakeup is not None:
-      self.msg("shutdown/deep-sleep with wakeup at: " +
-               f"{self._rtc_ext.print_ts(None,wakeup)}")
+      self.msg("shutdown/deep-sleep with wakeup at:", wakeup)
       self._rtc_ext.set_alarm(wakeup)
     else:
       self.msg("shutdown/deep-sleep without wakeup")
