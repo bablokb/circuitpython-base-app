@@ -54,7 +54,7 @@ class WifiImpl:
           continue
         with open(f"/sys/class/net/{d}/address") as a:
           mac = a.readline()[:-1]
-          if mac != "00:00:00:00":
+          if mac != "00:00:00:00:00:00":
             break
     except:
       pass
