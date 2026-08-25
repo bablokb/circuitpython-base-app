@@ -63,7 +63,7 @@ Currently supported attributes and methods:
   - `get_wifi(self,debug=False)`: Factory method for the wifi-interface. Needed
     for non-native wifi-implementations (e.g. using a Wiznet-chip or an
     ESP32AT-coprocessor).
-  - `get_display(self, hal)`:
+  - `get_display(self, hal)`: Factory method to create a display-object.
   - `get_rtc_ext(self, net_update=False, debug=False)`: Factory method for
     non-standard RTCs.
   - `update_rtc(self, ts)`: Update RTC (internal and external). Needed only
