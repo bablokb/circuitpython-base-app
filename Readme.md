@@ -14,7 +14,7 @@ Features
 
 The framework provides the following features:
 
-  - A `UIApplication` with a standard MVC application design (controller).
+  - An `UIApplication` with a standard MVC application design (controller).
     The application implements a *data-provider* (model) for the data and
     an *ui-provider* for the view.
   - An abstraction layer supporting different development boards. These
@@ -59,10 +59,60 @@ Configuration
 -------------
 
 For the configuration of your application, you need to provide a file
-`settings.py` that provides a number of value-holder objects:
+`settings.py` that creates a number of value-holder objects:
 
   - `secrets`: network credentials
   - `app_config`: application configuration
   - `hw_config`: hardware-configuration
 
 Use the blueprint `settings.py` and adopt it to your needs.
+See the [Configuration Refererence](./config-reference.md) for details.
+
+
+Hardware Abstraction Layer and hw_config
+----------------------------------------
+
+CircuitPython offers basic hardware abstraction within the
+`board`-module.  Boards with an integrated display provide
+e.g. `board.DISPLAY`. This abstraction is fine as long as you only use
+the display. Some boards also have integrated buttons or other
+peripherals. The MagTag for example defines `board.BUTTON_A`, while
+the Badger2040W defines `board.SW_A`.
+
+Therefore boards with peripherals beyond a display usually need a
+suitable hardware abstraction layer class. For details, read the
+[HAL Guide](./hal-guide.md).
+
+Simple dev-boards without peripherals don't need a dedicated
+HAL-class. There is a base class that takes care of most of the
+requirements. Nevertheless, you have to tell the application which
+peripherals to use, e.g. how to create the display-object for an
+externally attached display.
+
+This is where the `hw_config` object mentioned above steps in. It allows
+the definition of attributes and methods that are mixed into the base
+HAL class on the fly:
+
+    def _create_display(hal):
+      """ create display for a Sharp Memory Display """
+
+      displayio.release_displays()
+      spi = busio.SPI(SCK_PIN,MOSI=MOSI_PIN)
+      atexit.register(at_exit,spi)
+
+      framebuffer = sharpdisplay.SharpMemoryFramebuffer(spi,CS_PIN,WIDTH,HEIGHT)
+      return framebufferio.FramebufferDisplay(framebuffer, auto_refresh=False)
+
+    class Settings:
+      pass
+
+    hw_config     = Settings()
+    hw_config.get_display = _create_display
+    hw_config.gamut = "mono"
+    hw_config.eink  = False
+
+This code-snippet defines a factory method for the display
+(`_create_display()`) and assignes it to
+`hw_config.get_display`. `get_display()` is a method of the base HAL
+class, and during initialization `hw_config` is merged and will
+replace this method on the fly.
