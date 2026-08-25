@@ -19,8 +19,8 @@ secrets.retry     = 2
 secrets.debugflag = False
 secrets.channel   = 6
 secrets.timeout   = 10
-secrets.time_url = 'http://worldtimeapi.org/api/ip'
-secrets.net_update = True
+#secrets.time_url = 'http://worldtimeapi.org/api/ip'  # out of service
+secrets.net_update = False
 
 # app configuration   --------------------------------------------------------
 
