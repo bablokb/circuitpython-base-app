@@ -9,6 +9,7 @@
 
 import board
 from digitalio import DigitalInOut, Direction
+import time
 
 from .hal_base import HalBase
 
