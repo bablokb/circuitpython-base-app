@@ -185,7 +185,7 @@ class UIApplication:
       duration = time.monotonic()-start
       self.msg(f"update_ui (uiprovider): {duration:f}s")
 
-    if content:
+    if not content is None:
       start = time.monotonic()
       self.msg(f"updating root_group with view (len: {len(content)})")
       self.display.root_group = content  # update root_group ...
