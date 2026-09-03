@@ -14,6 +14,7 @@ import time
 import board
 import gc
 
+import base_app.hal
 from settings import secrets, app_config
 
 # --- application class   ----------------------------------------------------
@@ -30,7 +31,10 @@ class UIApplication:
 
     self._debug = getattr(app_config, "debug", False)
     self.msg(f"running on board {board.board_id}")
+
+    # run basic hardware configuration (HAL + hw_config)
     self._setup(with_rtc)  # setup hardware
+
     blink_time = getattr(self,"led_blink_init",0.1)
     self.blink(blink_time)
 
@@ -50,7 +54,7 @@ class UIApplication:
   def _setup(self,with_rtc):
     """ setup hardware """
 
-    self.hal = self._get_hal()
+    self.hal = base_app.hal.get_hal(self.msg)
     self.hal.debug = self._debug
 
     self.display    = self.hal.display()
@@ -64,27 +68,6 @@ class UIApplication:
     else:
       self._rtc_ext = None
     gc.collect()
-
-  # --- get HAL   ------------------------------------------------------------
-
-  # Import HAL (hardware-abstraction-layer).
-  # This expects an object "impl" within the implementing hal_file.
-  # All hal implementations are within src/hal/. Filenames must be
-  # board.board_id.py, e.g. src/hal/pimoroni_inky_frame_5_7.py
-
-  def _get_hal(self):
-    """ read and return hal-object """
-
-    try:
-      hal_file = "base_app.hal."+board.board_id.replace(".","_")
-      hal_module = builtins.__import__(hal_file,None,None,["impl"],0)
-      self.msg("using board-specific implementation")
-    except Exception as ex:
-      self.msg(f"info: no board specific HAL (ex: {ex})")
-      hal_file = "base_app.hal.hal_default"
-      hal_module = builtins.__import__(hal_file,None,None,["impl"],0)
-      self.msg("info: using default implementation from HalBase")
-    return hal_module.impl
 
   # --- check for power-off button press   -----------------------------------
 
