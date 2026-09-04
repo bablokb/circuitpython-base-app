@@ -30,11 +30,11 @@ def get_hal(msg_printer=None):
   except Exception as ex:
     if msg_printer:
       msg_printer(f"info: no board specific HAL (ex: {ex})")
-    if hal_file.startswith("RASPBERRY_PI"):
+    if board.board_id.startswith("RASPBERRY_PI"):
       # use GENERIC_LINUX_PC
       hal_file = "base_app.hal.GENERIC_LINUX_PC"
       if msg_printer:
-        msg_printer("info: using default implementation from HalBase")
+        msg_printer("info: using HAL from GENERIC_LINUX_PC instead")
     else:
       hal_file = "base_app.hal.hal_default"
       if msg_printer:
