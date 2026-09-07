@@ -109,7 +109,7 @@ class HalPygame(HalBase):
 
     if not getattr(self, "shutdown_emulate", False):
       # noop
-      self.msg(f"shutdown() for {board.board_id} is noop")
+      self.msg(f"{board.board_id}: shutdown() is a noop")
       return
     delay = getattr(self, "shutdown_delay", 0)
     self.msg(f"emulating shutdown after waiting {delay}s")
@@ -133,15 +133,24 @@ class HalPygame(HalBase):
     return False
 
   def deep_sleep(self,alarms=[], wakeup=None):
-    """ activate deep-sleep (not supported, fall back to idle) """
+    """ activate deep-sleep.
+
+    This will wait until wakeup is due, and then restart the
+    program.
+    """
+
+    if not wakeup:
+      wakeup = sys.maxsize
 
     if not self._display:
-      while True:
+      while time.time() < wakeup:
         time.sleep(1)
-
-    while True:
-      if self._display.check_quit():
-        sys.exit(0)
+    else:
+      while  time.time() < wakeup:
+        if self._display.check_quit():
+          sys.exit(0)
+        time.sleep(0.1)
+    self.reset()
 
   def get_nvram(self):
     """ return emulated nvram storage-location """
@@ -169,5 +178,10 @@ class HalPygame(HalBase):
     with open(self.get_nvram(),"wb") as f:
       f.seek(offset)
       f.write(data)
+
+  def reset(self):
+    """ emulate reset device """
+    self.msg(f"{board.board_id}: reset(): '{sys.executable} {sys.argv}'")
+    os.execv(sys.executable, [sys.executable]+sys.argv)
 
 impl = HalPygame()

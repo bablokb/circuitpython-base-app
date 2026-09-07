@@ -286,3 +286,8 @@ class HalBase:
     if not microcontroller.nvm:
       raise NotImplementedError("nvram not available for this platform")
     microcontroller.nvm[offset:offset+len(data)] = data
+
+  def reset(self):
+    """ reset device """
+    import microcontroller
+    microcontroller.reset()
