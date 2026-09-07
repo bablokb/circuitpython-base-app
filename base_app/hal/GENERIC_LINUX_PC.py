@@ -7,6 +7,7 @@
 # Website: https://github.com/bablokb/circuitpython-base-app
 # ----------------------------------------------------------------------------
 
+import board
 import sys
 import os
 import time
@@ -96,11 +97,26 @@ class HalPygame(HalBase):
     return WifiImpl(debug=debug)
 
   def shutdown(self):
-    """ leave program (here: wait for quit) """
-    if not self._display:
-      sys.exit(0)
-    else:
-      self.deep_sleep()
+    """ process shutdown request.
+
+    Since PyGame does not support 'hardware'-shutdown, this
+    is a noop. To emulate shutdown, set
+      hw_config.shutdown_emulate=True.
+
+    To keep the display visible for a while, set
+      hw_config.shutdown_delay = <n_secs>
+    """
+
+    if not getattr(self, "shutdown_emulate", False):
+      # noop
+      self.msg(f"shutdown() for {board.board_id} is noop")
+      return
+    delay = getattr(self, "shutdown_delay", 0)
+    self.msg(f"emulating shutdown after waiting {delay}s")
+    end = time.monotonic() + delay
+    while time.monotonic() < end:
+      time.sleep(0.1)
+    sys.exit(0)
 
   def sleep(self,duration):
     if not self._display:
