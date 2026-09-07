@@ -69,6 +69,8 @@ Currently supported attributes and methods:
   - `update_rtc(self, ts)`: Update RTC (internal and external). Needed only
     for non-standard RTCs.
   - `shutdown(self)`: Implement shutdown (power off). The default is a no-op.
+  - `shutdown_emulate`: If `True`, exit the program.
+  - `shutdown_delay`: Number of seconds to wait before exit.
   - `at_exit(self)`: At-exit processing to free ressources.
   - `sleep(self,duration)`: Sleep implementation.
   - `get_keypad(self, hal)`: Factory method for creating a `Keypad` object. The
