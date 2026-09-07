@@ -17,6 +17,8 @@ import adafruit_requests
 
 from .hal_base import HalBase
 
+from settings import app_config
+
 class WifiImpl:
   """ request-implementation using sockets from CPython """
 
@@ -152,14 +154,16 @@ class HalPygame(HalBase):
         time.sleep(0.1)
     self.reset()
 
+  def get_appdir(self):
+    """ query application directory """
+    appdir = os.path.join(os.path.expanduser('~'),
+                         ".local","share",app_config.app_name)
+    os.makedirs(appdir, mode=0o700, exist_ok=True)
+    retur appdir
+
   def get_nvram(self):
     """ return emulated nvram storage-location """
-    import os
-    from settings import app_config
-    nvram = os.path.join(os.path.expanduser('~'),
-                         ".local","share",app_config.app_name)
-    os.makedirs(nvram, mode=0o700, exist_ok=True)
-    return os.path.join(nvram,"nvram.data")
+    return os.path.join(self.get_appdir(),"nvram.data")
 
   def nvram_read(self, offset, count):
     """ emulate reading data from nvram """
@@ -183,5 +187,11 @@ class HalPygame(HalBase):
     """ emulate reset device """
     self.msg(f"{board.board_id}: reset(): '{sys.executable} {sys.argv}'")
     os.execv(sys.executable, [sys.executable]+sys.argv)
+
+  def start_code_file(self,name, *args):
+    """ emulate supervisor.set_next_code_file()+supervisor.reload() """
+    self.msg(
+      f"{board.board_id}: starting '{sys.executable} {name} {list(args)}'")
+    os.execv(sys.executable, [sys.executable, name]+list(args))
 
 impl = HalPygame()
