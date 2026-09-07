@@ -44,6 +44,13 @@ class HalBase:
       if attr[0] != '_':
         setattr(self, attr, getattr(hw_config,attr))
 
+    # run init() (override in hw_config)
+    self.init()
+
+  def init(self):
+    """ generic initialization. Must be overriden in hw_config """
+    pass
+
   def _init_led(self):
     """ initialize LED/Neopixel """
     if hasattr(self,'_led') or hasattr(self,'_pixel'):
@@ -241,10 +248,12 @@ class HalBase:
     import alarm
     alarms = []
     # use self.WAKE_PINS if available, else fall back to self.BUTTONS
-    if hasattr(self, "WAKE_PINS"):
-      alarm_pins, value, edge, pull = getattr(self, "WAKE_PINS")
-    elif hasattr(self, "BUTTONS"):
-      alarm_pins, value, pull = self.BUTTONS
+    wake_pins = getattr(self, "WAKE_PINS", None)
+    buttons   = getattr(self, "BUTTONS", None)
+    if wake_pins:
+      alarm_pins, value, edge, pull = wake_pins
+    elif buttons:
+      alarm_pins, value, pull = buttons
       edge = False
     else:
       alarm_pins = []
@@ -291,3 +300,9 @@ class HalBase:
     """ reset device """
     import microcontroller
     microcontroller.reset()
+
+  def start_code_file(self, name):
+    """ emulate supervisor.set_next_code_file()+supervisor.reload() """
+    import supervisor
+    supervisor.set_next_code_file(name)
+    supervisor.reload()
