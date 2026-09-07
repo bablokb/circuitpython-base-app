@@ -58,6 +58,7 @@ Currently supported attributes and methods:
   - Standard attributes from the `board`-module (e.g. `SDA`, `SCL` etc.) can
     be overridden from `hw_config`. One use case for example: the application
     LED must not necessarily be the board-LED.
+  - `init()`: one-time initialization, e.g. to mount a SD
   - `led(self,value,color=[255,0,0])`: A method to override led blink behavior.
   - `bat_level(self)`: A method to return the battery level.
   - `get_wifi(self,debug=False)`: Factory method for the wifi-interface. Needed
