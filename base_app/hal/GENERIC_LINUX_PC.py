@@ -159,7 +159,7 @@ class HalPygame(HalBase):
     appdir = os.path.join(os.path.expanduser('~'),
                          ".local","share",app_config.app_name)
     os.makedirs(appdir, mode=0o700, exist_ok=True)
-    retur appdir
+    return appdir
 
   def get_nvram(self):
     """ return emulated nvram storage-location """
@@ -186,12 +186,16 @@ class HalPygame(HalBase):
   def reset(self):
     """ emulate reset device """
     self.msg(f"{board.board_id}: reset(): '{sys.executable} {sys.argv}'")
+    sys.stdout.flush()
+    sys.stderr.flush()
     os.execv(sys.executable, [sys.executable]+sys.argv)
 
   def start_code_file(self,name, *args):
     """ emulate supervisor.set_next_code_file()+supervisor.reload() """
     self.msg(
       f"{board.board_id}: starting '{sys.executable} {name} {list(args)}'")
+    sys.stdout.flush()
+    sys.stderr.flush()
     os.execv(sys.executable, [sys.executable, name]+list(args))
 
 impl = HalPygame()
