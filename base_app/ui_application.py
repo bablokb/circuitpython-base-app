@@ -210,10 +210,10 @@ class UIApplication:
           wakeup = self._rtc_ext.get_alarm_time(s=self.data["sleep_time"])
         elif "wake_time" in self.data and self.data["wake_time"]:
           # wake_time should be a valid struct_time
-          if isinstance(wake_time,int):
-            wakeup = time.localtime(wake_time)
+          if isinstance(self.data["wake_time"],int):
+            wakeup = time.localtime(self.data["wake_time"])
           else:
-            wakeup = wake_time
+            wakeup = self.data["wake_time"]
       else:
         self.msg("could not configure wakeup")
 
