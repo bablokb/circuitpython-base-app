@@ -45,9 +45,9 @@ class HalBase:
         setattr(self, attr, getattr(hw_config,attr))
 
     # run init() (override in hw_config)
-    self.init()
+    self.init(self)
 
-  def init(self):
+  def init(self, hal):
     """ generic initialization. Must be overriden in hw_config """
     pass
 
