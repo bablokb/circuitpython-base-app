@@ -58,26 +58,26 @@ Currently supported attributes and methods:
   - Standard attributes from the `board`-module (e.g. `SDA`, `SCL` etc.) can
     be overridden from `hw_config`. One use case for example: the application
     LED must not necessarily be the board-LED.
-  - `init()`: one-time initialization, e.g. to mount a SD
-  - `led(self,value,color=[255,0,0])`: A method to override led blink behavior.
-  - `bat_level(self)`: A method to return the battery level.
-  - `get_wifi(self,debug=False)`: Factory method for the wifi-interface. Needed
+  - `init(hal)`: one-time initialization, e.g. to mount a SD
+  - `led(value,color=[255,0,0])`: A method to override led blink behavior.
+  - `bat_level()`: A method to return the battery level.
+  - `get_wifi(debug=False)`: Factory method for the wifi-interface. Needed
     for non-native wifi-implementations (e.g. using a Wiznet-chip or an
     ESP32AT-coprocessor).
-  - `get_display(self, hal)`: Factory method to create a display-object.
-  - `get_rtc_ext(self, net_update=False, debug=False)`: Factory method for
+  - `get_display(hal)`: Factory method to create a display-object.
+  - `get_rtc_ext(net_update=False, debug=False)`: Factory method for
     non-standard RTCs.
-  - `update_rtc(self, ts)`: Update RTC (internal and external). Needed only
+  - `update_rtc(ts)`: Update RTC (internal and external). Needed only
     for non-standard RTCs.
-  - `shutdown(self)`: Implement shutdown (power off). The default is a no-op.
+  - `shutdown()`: Implement shutdown (power off). The default is a no-op.
   - `shutdown_emulate`: If `True`, exit the program.
   - `shutdown_delay`: Number of seconds to wait before exit.
-  - `at_exit(self)`: At-exit processing to free ressources.
-  - `sleep(self,duration)`: Sleep implementation.
-  - `get_keypad(self, hal)`: Factory method for creating a `Keypad` object. The
+  - `at_exit()`: At-exit processing to free ressources.
+  - `sleep(duration)`: Sleep implementation.
+  - `get_keypad(hal)`: Factory method for creating a `Keypad` object. The
     default uses the GPIOs defined with `BUTTONS`.
-  - `check_key(self,name)`: Test if a given key has been pressed.
-  - `get_pin_alarms(self, hal)`: Return a list of pin-alarms defined for this board.
-  - `deep_sleep(self, alarms=[], wakeup=None)`: Implement deep-sleep.
-  - `nvram_read(self, offset, count)`: Read bytes from NVRAM.
-  - `nvram_write(self, offset, data)`: Write bytes to NVRAM.
+  - `check_key(name)`: Test if a given key has been pressed.
+  - `get_pin_alarms(hal)`: Return a list of pin-alarms defined for this board.
+  - `deep_sleep(alarms=[], wakeup=None)`: Implement deep-sleep.
+  - `nvram_read(offset, count)`: Read bytes from NVRAM.
+  - `nvram_write(offset, data)`: Write bytes to NVRAM.
