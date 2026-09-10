@@ -115,9 +115,7 @@ class HalPygame(HalBase):
       return
     delay = getattr(self, "shutdown_delay", 0)
     self.msg(f"emulating shutdown after waiting {delay}s")
-    end = time.monotonic() + delay
-    while time.monotonic() < end:
-      time.sleep(0.1)
+    self.sleep(delay)
     sys.exit(0)
 
   def sleep(self,duration):
@@ -185,17 +183,17 @@ class HalPygame(HalBase):
 
   def reset(self):
     """ emulate reset device """
-    self.msg(f"{board.board_id}: reset(): '{sys.executable} {sys.argv}'")
+    self.msg(f"{board.board_id}: reset(): '{sys.executable} ./main.py'")
     sys.stdout.flush()
     sys.stderr.flush()
-    os.execv(sys.executable, [sys.executable]+sys.argv)
+    os.execv(sys.executable, [sys.executable, "./main.py"])
 
-  def start_code_file(self,name, *args):
+  def start_code_file(self,name):
     """ emulate supervisor.set_next_code_file()+supervisor.reload() """
     self.msg(
-      f"{board.board_id}: starting '{sys.executable} {name} {list(args)}'")
+      f"{board.board_id}: starting '{sys.executable} {name}'")
     sys.stdout.flush()
     sys.stderr.flush()
-    os.execv(sys.executable, [sys.executable, name]+list(args))
+    os.execv(sys.executable, [sys.executable, name])
 
 impl = HalPygame()
