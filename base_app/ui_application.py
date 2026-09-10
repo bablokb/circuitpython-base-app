@@ -26,14 +26,14 @@ class UIApplication:
 
   # --- constructor   --------------------------------------------------------
 
-  def __init__(self,dataprovider,uiprovider,with_rtc=True):
+  def __init__(self,dataprovider,uiprovider, with_rtc=True, with_wifi=True):
     """ constructor """
 
     self._debug = getattr(app_config, "debug", False)
     self.msg(f"running on board {board.board_id}")
 
     # run basic hardware configuration (HAL + hw_config)
-    self._setup(with_rtc)  # setup hardware
+    self._setup(with_rtc, with_wifi)  # setup hardware
 
     blink_time = getattr(self,"led_blink_init",0.1)
     self.blink(blink_time)
@@ -51,7 +51,7 @@ class UIApplication:
 
   # --- setup attributes from hardware-env   ---------------------------------
 
-  def _setup(self,with_rtc):
+  def _setup(self,with_rtc, with_wifi):
     """ setup hardware """
 
     self.hal = base_app.hal.get_hal(self.msg)
@@ -59,7 +59,7 @@ class UIApplication:
 
     self.display    = self.hal.display()
     self.is_pygame  = hasattr(self.display,"check_quit")
-    self.wifi       = self.hal.wifi(self._debug)
+    self.wifi       = self.hal.wifi(self._debug) if with_wifi else None
 
     if with_rtc:
       self._rtc_ext = self.hal.rtc_ext(
@@ -218,13 +218,15 @@ class UIApplication:
         self.msg("could not configure wakeup")
 
     if wakeup is not None:
-      self.msg("shutdown/deep-sleep with wakeup at:", wakeup)
+      self.msg("configuring shutdown/deep-sleep with wakeup at:", wakeup)
       self._rtc_ext.set_alarm(wakeup)
     else:
       self.msg("shutdown/deep-sleep without wakeup")
 
     # run shutdown. This could be a noop, so fall back to deep-sleep.
+    self.msg("trying to shutdown the device")
     self.hal.shutdown()
+    self.msg("falling back to deep-sleep")
     self.hal.deep_sleep(wakeup=time.mktime(wakeup) if wakeup else None)
     return
 
