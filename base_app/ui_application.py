@@ -218,6 +218,11 @@ class UIApplication:
         self.msg("could not configure wakeup")
 
     if wakeup is not None:
+      # check if wakeup is at least two seconds in the future
+      if time.mktime(wakeup)-2 <= time.time():
+        # reset at once
+        self.msg("wakeup is in the past, resetting...")
+        self.hal.reset()
       self.msg("configuring shutdown/deep-sleep with wakeup at:", wakeup)
       self._rtc_ext.set_alarm(wakeup)
     else:
