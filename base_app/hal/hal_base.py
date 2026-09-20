@@ -148,7 +148,7 @@ class HalBase:
       else:
         import busio
         self._i2c = busio.I2C(self.SCL,self.SDA)
-      return ExtBase.create(RTC,self._i2c,net_update=net_update,debug=debug)
+      return ExtBase.create(_rtc,self._i2c,net_update=net_update,debug=debug)
     except Exception as ex:
       if debug:
         self.msg(f"Could not create RTC for {RTC}. Falling back to NoRTC.")
