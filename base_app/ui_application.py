@@ -129,7 +129,7 @@ class UIApplication:
     blink_time = getattr(self,"led_blink_exception",0.6)
     self.blink(blink_time,color=UIApplication.RED)
     start = time.monotonic()
-    self.update_display(self._uiprovider.handle_exception(ex))
+    self.update_display(self._uiprovider.handle_exception(ex, self.data))
     duration = time.monotonic()-start
     self.msg(f"handle_exception (uiprovider): {duration:f}s")
 
