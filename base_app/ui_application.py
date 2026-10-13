@@ -214,6 +214,10 @@ class UIApplication:
             wakeup = time.localtime(self.data["wake_time"])
           else:
             wakeup = self.data["wake_time"]
+        else:
+          # use fallback run_interval
+          wakeup = self._rtc_ext.get_alarm_time(
+            s=getattr(app_config, "run_interval", 60))
       else:
         self.msg("could not configure wakeup")
 
@@ -312,7 +316,8 @@ class UIApplication:
           # CPython prior to 3.10
           traceback.print_exception(None, ex1, ex1.__traceback__)
 
-      success = False
+      # force retry if configured
+      success = getattr(app_config, "retry_on_fail", False)
 
     if once:
       # pygame will instead wait for quit
