@@ -38,12 +38,6 @@ class UIApplication:
     blink_time = getattr(self,"led_blink_init",0.1)
     self.blink(blink_time)
 
-    # check for power_off pin (unconditional, no automatic wake-up)
-    self._check_power_off()
-
-    # update internal rtc from external rtc/internet
-    if self._rtc_ext:
-      self._rtc_ext.update(force=self.hal.check_key("key_upd"))
     self._dataprovider = dataprovider
     self._dataprovider.set_wifi(self.wifi)
     self._uiprovider = uiprovider
@@ -68,19 +62,6 @@ class UIApplication:
     else:
       self._rtc_ext = None
     gc.collect()
-
-  # --- check for power-off button press   -----------------------------------
-
-  def _check_power_off(self):
-    """ check power_off button """
-
-    if  self.hal.check_key("key_off"):
-      blink_time = getattr(self,"led_blink_power_off",0.1)
-      for _ in range(3):
-        self.blink(blink_time)
-      time.sleep(1)                   # extra time for button release
-      self.hal.shutdown()           # direct shutdown, no wake-up
-      self.hal.deep_sleep()         # in case shutdown is noop
 
   # --- print debug-message   ------------------------------------------------
 
