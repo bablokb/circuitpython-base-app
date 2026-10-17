@@ -128,10 +128,6 @@ class HalPygame(HalBase):
       if self._display.check_quit():
         sys.exit(0)
 
-  def check_key(self,name):
-    """ check if key is pressed (currently not supported) """
-    return False
-
   def deep_sleep(self,alarms=[], wakeup=None):
     """ activate deep-sleep.
 

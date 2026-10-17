@@ -221,24 +221,6 @@ class HalBase:
       self._keypad = self.get_keypad(self)
     return self._keypad
 
-  def check_key(self,name):
-    """ check if key is pressed """
-
-    nr = getattr(self, name, None)
-    self.msg(f"check_key({name}): {nr=}")
-    if nr is None:
-      return False
-    keypad = self.keypad()
-    if not keypad:
-      return False
-    queue = keypad.events
-    ev = queue.get()
-    if ev:
-      self.msg(f"check_key({name}): pressed: {ev.pressed}, knr: {ev.key_number}")
-      return ev.pressed and ev.key_number == nr
-    else:
-      self.msg("ckeck_key({name}): empty event-queue")
-
   def get_pin_alarms(self, hal):
     """ return pin-alarms
     Override in subclass or hw_config if necessary
