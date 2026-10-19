@@ -78,6 +78,7 @@ class HalPygame(HalBase):
   def __init__(self):
     """ constructor """
 
+    self._wake_pin = None
     # set the defaults here first, because ...
     self.eink = False
     self.gamut = "rgb16"
@@ -128,6 +129,16 @@ class HalPygame(HalBase):
       if self._display.check_quit():
         sys.exit(0)
 
+  def get_keypad(self, hal):
+    """ return configured keypad. """
+    if self.BUTTONS and self._display:
+      return self._display.keypad(self.BUTTONS[0],
+                                  value_when_pressed=self.BUTTONS[1],
+                                  pull=self.BUTTONS[2],
+                                  interval=0.1,max_events=4
+                                  )
+    return None
+
   def deep_sleep(self,alarms=[], wakeup=None):
     """ activate deep-sleep.
 
@@ -142,9 +153,30 @@ class HalPygame(HalBase):
       while time.time() < wakeup:
         time.sleep(1)
     else:
-      while  time.time() < wakeup:
+      wake_pins = getattr(self, "WAKE_PINS", None)
+      buttons   = getattr(self, "BUTTONS", None)
+      if self._keypad and wake_pins:
+        # deinit standard keypad and create a new keypad for wake-pins
+        self._keypad.deinit()
+        keys = self._display.keypad(
+          wake_pins[0],
+          value_when_pressed=wake_pins[1],
+          pull=wake_pins[2],
+          interval=0.1,max_events=4
+          )
+      else:
+        # use standard keypad (create if it does not exist)
+        keys = self.keypad()
+      self.msg(f"{board.board_id}: deep-sleep()" +
+               f"{' with wake keys' if keys else ''}")
+      while time.time() < wakeup:
         if self._display.check_quit():
           sys.exit(0)
+        if keys:
+          ev = keys.events.get()
+          if ev:
+            self._wake_pin = ev.key_number
+            break
         time.sleep(0.1)
     self.reset()
 
@@ -179,10 +211,13 @@ class HalPygame(HalBase):
 
   def reset(self):
     """ emulate reset device """
-    self.msg(f"{board.board_id}: reset(): '{sys.executable} ./main.py'")
     sys.stdout.flush()
     sys.stderr.flush()
-    os.execv(sys.executable, [sys.executable, "./main.py"])
+    args = [sys.executable, "./main.py"]
+    if not self._wake_pin is None:
+      args.append(f"{self._wake_pin}")
+    self.msg(f"{board.board_id}: reset(): exec {' '.join(args)}")
+    os.execv(sys.executable, args)
 
   def start_code_file(self,name):
     """ emulate supervisor.set_next_code_file()+supervisor.reload() """
@@ -191,5 +226,9 @@ class HalPygame(HalBase):
     sys.stdout.flush()
     sys.stderr.flush()
     os.execv(sys.executable, [sys.executable, name])
+
+  def get_wake_button(self):
+    """ return wake button index or None (e.g. for time-alarm) """
+    return int(sys.argv[1]) if len(sys.argv) > 1 else None
 
 impl = HalPygame()
