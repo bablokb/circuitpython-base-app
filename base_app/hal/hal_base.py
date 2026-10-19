@@ -288,3 +288,33 @@ class HalBase:
     import supervisor
     supervisor.set_next_code_file(name)
     supervisor.reload()
+
+  def get_wake_button(self):
+    """ return wake button index or None (e.g. for time-alarm) """
+
+    try:
+      import alarm
+      if type(alarm.wake_alarm) != alarm.pin.PinAlarm:
+        return None
+      # use self.WAKE_PINS if available, else fall back to self.BUTTONS
+      wake_pins = getattr(self, "WAKE_PINS", None)
+      buttons   = getattr(self, "BUTTONS", None)
+      if wake_pins:
+        alarm_pins = wake_pins[0]
+      elif buttons:
+        alarm_pins = buttons[0]
+      else:
+        return None
+
+      # test sequentially
+      self.msg(f"get_wake_button(): wake pin: {alarm.wake_alarm.pin}")
+      for index, pin in enumerate(alarm_pins):
+        if pin == alarm.wake_alarm.pin:
+          self.msg(f"get_wake_button(): found pin at index {index}")
+          return index
+      # no hit
+      return None
+    except Exception as ex:
+      # typically no alarm module
+      self.msg(f"get_wake_button(): could not query wake-button: {ex}")
+      return None
