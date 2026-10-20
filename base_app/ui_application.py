@@ -84,7 +84,7 @@ class UIApplication:
   def blink(self,duration,color=RED):
     """ blink status-led once for the given duration """
     self.hal.led(1,color=color)
-    time.sleep(duration)
+    self.hal.sleep(duration)
     self.hal.led(0,color=color)
 
   # --- update data from server   --------------------------------------------
@@ -270,7 +270,7 @@ class UIApplication:
   # --- run   ----------------------------------------------------------------
 
   def run(self,once=False):
-    """ main processing """
+    """ main processing: the subclass has to implement looping """
 
     self._run_start = time.monotonic()
     try:
@@ -301,7 +301,9 @@ class UIApplication:
       success = getattr(app_config, "retry_on_fail", False)
 
     if once:
-      # pygame will instead wait for quit
+      keys = self.hal.keypad()
+      if keys and len(keys.events):  # the subclass must decide what to do
+        return                       # with pending key-events
       wakeup = self.shutdown(with_wakeup=success)
     else:
       self.run_idle()
