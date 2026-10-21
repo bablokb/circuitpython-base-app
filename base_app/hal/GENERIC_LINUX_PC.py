@@ -13,6 +13,7 @@ import os
 import time
 
 import socket
+import ssl
 import adafruit_requests
 
 from .hal_base import HalBase
@@ -34,7 +35,8 @@ class WifiImpl:
   def requests(self):
     """ return requests-object """
     if not self._requests:
-      self._requests = adafruit_requests.Session(socket)
+      self._requests = adafruit_requests.Session(socket,
+                                                 ssl.create_default_context())
     return self._requests
 
   @property
@@ -158,15 +160,14 @@ class HalPygame(HalBase):
       if self._keypad and wake_pins:
         # deinit standard keypad and create a new keypad for wake-pins
         self._keypad.deinit()
-        keys = self._display.keypad(
+        self._keypad = self._display.keypad(
           wake_pins[0],
           value_when_pressed=wake_pins[1],
           pull=wake_pins[2],
           interval=0.1,max_events=4
           )
-      else:
-        # use standard keypad (create if it does not exist)
-        keys = self.keypad()
+
+      keys = self.keypad()
       self.msg(f"{board.board_id}: deep-sleep()" +
                f"{' with wake keys' if keys else ''}")
       while time.time() < wakeup:
