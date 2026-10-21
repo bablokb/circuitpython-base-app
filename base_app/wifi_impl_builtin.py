@@ -10,6 +10,7 @@
 import board
 import time
 import socketpool
+import ssl
 import adafruit_requests
 
 from settings import secrets
@@ -84,7 +85,8 @@ class WifiImpl:
   def requests(self):
     """ return requests-object """
     if not self._requests:
-      self._requests = adafruit_requests.Session(self._pool)
+      self._requests = adafruit_requests.Session(self._pool,
+                                                 ssl.create_default_context())
     return self._requests
 
   # --- pool obect   --------------------------------------------------------
