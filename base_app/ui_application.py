@@ -302,8 +302,8 @@ class UIApplication:
 
     if once:
       keys = self.hal.keypad()
-      if keys and len(keys.events):  # the subclass must decide what to do
-        return                       # with pending key-events
+      if keys and len(keys.events) and self.process_events():
+        return                       # subclass consumed a pending key-event
       wakeup = self.shutdown(with_wakeup=success)
     else:
       self.run_idle()
