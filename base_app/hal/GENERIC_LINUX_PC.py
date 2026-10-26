@@ -123,7 +123,7 @@ class HalPygame(HalBase):
 
   def sleep(self,duration):
     if not self._display:
-      super.sleep(duration)
+      super().sleep(duration)
       return
 
     start = time.monotonic()
@@ -137,7 +137,7 @@ class HalPygame(HalBase):
       return self._display.keypad(self.BUTTONS[0],
                                   value_when_pressed=self.BUTTONS[1],
                                   pull=self.BUTTONS[2],
-                                  interval=0.1,max_events=4
+                                  interval=0,max_events=4
                                   )
     return None
 
@@ -156,15 +156,14 @@ class HalPygame(HalBase):
         time.sleep(1)
     else:
       wake_pins = getattr(self, "WAKE_PINS", None)
-      buttons   = getattr(self, "BUTTONS", None)
       if self._keypad and wake_pins:
         # deinit standard keypad and create a new keypad for wake-pins
         self._keypad.deinit()
         self._keypad = self._display.keypad(
           wake_pins[0],
           value_when_pressed=wake_pins[1],
-          pull=wake_pins[2],
-          interval=0.1,max_events=4
+          pull=wake_pins[3],
+          interval=0,max_events=4
           )
 
       keys = self.keypad()
@@ -175,7 +174,7 @@ class HalPygame(HalBase):
           sys.exit(0)
         if keys:
           ev = keys.events.get()
-          if ev:
+          if ev and ev.pressed:
             self._wake_pin = ev.key_number
             break
         time.sleep(0.1)
