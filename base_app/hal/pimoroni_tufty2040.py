@@ -27,5 +27,14 @@ class HalTufty2040(HalBase):
       self.BUTTONS = ([board.SW_A, board.SW_B, board.SW_C,
                        board.SW_UP, board.SW_DOWN],
                       True, True)
+    if not getattr(self,"button_names",None):
+      self.button_names = ["A", "B", "C", "up", "down"]
+    if not getattr(self,"WAKE_PINS",None):
+      # format is ([pin, ...], value, edge, pull)
+      self.WAKE_PINS = ([board.SW_A, board.SW_B, board.SW_C,
+                         board.SW_UP, board.SW_DOWN],
+                        True, False, True)
+    if not getattr(self,"w_button_names",None):
+      self.w_button_names = ["A", "B", "C", "up", "down"]
 
 impl = HalTufty2040()

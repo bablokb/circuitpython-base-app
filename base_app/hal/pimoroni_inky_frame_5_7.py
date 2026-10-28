@@ -24,6 +24,11 @@ class HALInkyFrame57(HalBase):
     self.eink = True
     self.gamut = "acep_7colour"
     self.RTC = "PCF85063"
+    # BUTTONS is empty in super-class, but might be tweaked in hw_config
+    if not getattr(self,"button_names",None):
+      self.button_names = ["A", "B", "C", "D"]
+    if not getattr(self,"w_button_names",None):
+      self.w_button_names = ["A", "B", "C", "D"]
 
   def shutdown(self):
     """ turn off power by pulling enable pin low """

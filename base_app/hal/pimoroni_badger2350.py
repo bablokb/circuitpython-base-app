@@ -30,16 +30,24 @@ class HalBadger2350(HalBase):
     if not getattr(self,"BUTTONS",None):
       # format is ([pin, ...], value, pull)
       self.BUTTONS = ([board.SW_A, board.SW_B, board.SW_C,
-                       board.SW_DOWN, board.SW_UP, board.SW_HOME],
+                       board.SW_UP, board.SW_DOWN, board.SW_HOME],
                       False, True)
+    if not getattr(self,"button_names",None):
+      self.button_names = ["A", "B", "C", "up", "down", "home"]
     if not getattr(self,"WAKE_PINS",None):
       # format is ([pin, ...], value, edge, pull)
       self.WAKE_PINS = ([board.SW_A, board.SW_B, board.SW_C,
-                         board.SW_DOWN, board.SW_UP],
+                         board.SW_UP, board.SW_DOWN, board.SW_HOME],
                         False, True, True)
+    if not getattr(self,"w_button_names",None):
+      self.w_button_names = ["A", "B", "C", "up", "down", "home"]
 
-    # test for usb-connection
+    # test for serial-connection
     self._connected = supervisor.runtime.usb_connected
+    if self._connected:
+      led3 = DigitalInOut(board.LED3)
+      led3.direction = Direction.OUTPUT
+      led3.value = True
 
   # --- battery level   ------------------------------------------------------
 

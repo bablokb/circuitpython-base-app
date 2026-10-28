@@ -29,11 +29,15 @@ class HalMagtag(HalBase):
       # left to right: left,       up,        down,      right
       self.BUTTONS = ([board.D15, board.D14, board.D12, board.D11],
                       False, True)
+    if not getattr(self,"button_names",None):
+      self.button_names = ["left", "up", "down", "right"]
     if not getattr(self,"WAKE_PINS",None):
       # format is ([pin, ...], value, edge, pull)
       # use left and right for deep-sleep alarm buttons
       self.WAKE_PINS = ([board.D15, board.D11],
                         False, False, True)
+    if not getattr(self,"w_button_names",None):
+      self.w_button_names = ["left", "right"]
 
   def bat_level(self):
     """ return battery level """
