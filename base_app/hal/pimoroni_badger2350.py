@@ -38,12 +38,8 @@ class HalBadger2350(HalBase):
                          board.SW_DOWN, board.SW_UP],
                         False, True, True)
 
-    # test for serial-connection
+    # test for usb-connection
     self._connected = supervisor.runtime.usb_connected
-    if self._connected:
-      led3 = DigitalInOut(board.LED3)
-      led3.direction = Direction.OUTPUT
-      led3.value = True
 
   # --- battery level   ------------------------------------------------------
 
