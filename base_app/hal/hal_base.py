@@ -176,7 +176,7 @@ class HalBase:
     rtc_ext = self.rtc_ext()
     rtc_ext.update(new_time=ts)
 
-  def shutdown(self):
+  def shutdown(self, wakeup):
     """ shutdown system.
     Needs override in subclass or hw_config
     """

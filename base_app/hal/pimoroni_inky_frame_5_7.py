@@ -30,9 +30,11 @@ class HALInkyFrame57(HalBase):
     if not getattr(self,"w_button_names",None):
       self.w_button_names = ["A", "B", "C", "D"]
 
-  def shutdown(self):
+  def shutdown(self, wakeup):
     """ turn off power by pulling enable pin low """
     self._wait_for_display()
+    if wakeup and self._rtc_ext:
+      self._rtc_ext.set_alarm(wakeup)
     board.ENABLE_DIO.value = 0
 
   def _wait_for_display(self):

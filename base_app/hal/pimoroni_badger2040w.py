@@ -42,8 +42,11 @@ class HalBadger2040W(HalBase):
                         True, False, True)
     if not getattr(self,"w_button_names",None):
       self.w_button_names = ["A", "B", "C", "up", "down"]
-  def shutdown(self):
+
+  def shutdown(self, wakeup):
     """ turn off power by pulling enable pin low """
+    if wakeup and self._rtc_ext:
+      self._rtc_ext.set_alarm(wakeup)
     board.ENABLE_DIO.value = 0
 
 impl = HalBadger2040W()

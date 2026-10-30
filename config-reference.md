@@ -69,7 +69,8 @@ Currently supported attributes and methods:
     non-standard RTCs.
   - `update_rtc(ts)`: Update RTC (internal and external). Needed only
     for non-standard RTCs.
-  - `shutdown()`: Implement shutdown (power off). The default is a no-op.
+  - `shutdown(wakeup)`: Implement shutdown (power off). The default is a no-op.
+    Use the `wakeup` argument to configure power-on time.
   - `shutdown_emulate`: If `True`, exit the program.
   - `shutdown_delay`: Number of seconds to wait before exit.
   - `at_exit()`: At-exit processing to free ressources.

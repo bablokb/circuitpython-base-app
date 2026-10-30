@@ -209,13 +209,12 @@ class UIApplication:
         self.msg("wakeup is in the past, resetting...")
         self.hal.reset()
       self.msg("configuring shutdown/deep-sleep with wakeup at:", wakeup)
-      self._rtc_ext.set_alarm(wakeup)
     else:
       self.msg("shutdown/deep-sleep without wakeup")
 
     # run shutdown. This could be a noop, so fall back to deep-sleep.
     self.msg("trying to shutdown the device")
-    self.hal.shutdown()
+    self.hal.shutdown(wakeup)
     self.msg("falling back to deep-sleep")
     self.hal.deep_sleep(wakeup=time.mktime(wakeup) if wakeup else None)
     return

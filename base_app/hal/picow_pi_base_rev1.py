@@ -34,9 +34,11 @@ class HalPicoPiBase(HalBase):
     self._done.direction = Direction.OUTPUT
     self._done.value     = 0
 
-  def shutdown(self):
+  def shutdown(self, wakeup):
     """ turn off power by pulling GP4 high """
     self.msg("HalPicoPiBase.shutdown() started")
+    if wakeup and self._rtc_ext:
+      self._rtc_ext.set_alarm(wakeup)
     self._done.value = 1
     time.sleep(0.2)
     self._done.value = 0

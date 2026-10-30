@@ -101,7 +101,7 @@ class HalPygame(HalBase):
     """ return wifi-interface """
     return WifiImpl(debug=debug)
 
-  def shutdown(self):
+  def shutdown(self, wakeup):
     """ process shutdown request.
 
     Since PyGame does not support 'hardware'-shutdown, this
@@ -110,6 +110,8 @@ class HalPygame(HalBase):
 
     To keep the display visible for a while, set
       hw_config.shutdown_delay = <n_secs>
+
+    wakeup is ignored.
     """
 
     if not getattr(self, "shutdown_emulate", False):
