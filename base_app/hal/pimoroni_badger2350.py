@@ -36,18 +36,12 @@ class HalBadger2350(HalBase):
       self.button_names = ["A", "B", "C", "up", "down", "home"]
     if not getattr(self,"WAKE_PINS",None):
       # format is ([pin, ...], value, edge, pull)
+      # TODO: the home-button needs an additional PR for the Badger2350
       self.WAKE_PINS = ([board.SW_A, board.SW_B, board.SW_C,
                          board.SW_UP, board.SW_DOWN, board.SW_HOME],
                         False, True, True)
     if not getattr(self,"w_button_names",None):
       self.w_button_names = ["A", "B", "C", "up", "down", "home"]
-
-    # test for serial-connection
-    self._connected = supervisor.runtime.usb_connected
-    if self._connected:
-      led3 = DigitalInOut(board.LED3)
-      led3.direction = Direction.OUTPUT
-      led3.value = True
 
   # --- battery level   ------------------------------------------------------
 
@@ -72,7 +66,7 @@ class HalBadger2350(HalBase):
   def get_pin_alarms(self, hal):
     """ return pin-alarms: buttons are behind an interrupt pin unless connected
     """
-    if self._connected:
+    if supervisor.runtime.usb_connected:
       return super().get_pin_alarms(hal)
     import alarm
     return [alarm.pin.PinAlarm(board.SW_INT, value=False, edge=True,
@@ -97,16 +91,17 @@ class HalBadger2350(HalBase):
         self.msg("deep_sleep(): added TimeAlarm from argument")
 
       # test for serial-connection
-      if self._connected:
+      if self._keypad:
+        self._keypad.deinit()
+      if supervisor.runtime.usb_connected:
         # this will lead to a fake sleep, so don't preserve
         # button DIOs
+        self.msg("deep_sleep(): connected: starting fake deep-sleep")
         alarm.exit_and_deep_sleep_until_alarms(*all_alarms)
 
       # else try to create DIOs to preserve state
       # Note: button-wakeup only works with these dios pulled high, but
       #       this is not implmented in mainline CircuitPython
-      if self._keypad:
-        self._keypad.deinit()
       dios = [DigitalInOut(pin) for pin in self.WAKE_PINS[0]]
       for dio in dios:
         dio.pull = Pull.UP
@@ -130,7 +125,7 @@ class HalBadger2350(HalBase):
   def get_wake_button(self):
     """ return wake button index or None (e.g. for time-alarm) """
 
-    if self._connected:
+    if supervisor.runtime.usb_connected:
       # waking up from fake deep-sleep
       return super().get_wake_button()
 
