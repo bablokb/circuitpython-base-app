@@ -7,10 +7,11 @@
 # Website: https://github.com/bablokb/circuitpython-base-app
 # ----------------------------------------------------------------------------
 
+import alarm
 import board
 import time
 import keypad
-from digitalio import DigitalInOut, Direction
+import supervisor
 
 from .hal_base import HalBase
 
@@ -24,18 +25,49 @@ class HALInkyFrame57(HalBase):
     self.eink = True
     self.gamut = "acep_7colour"
     self.RTC = "PCF85063"
-    # BUTTONS is empty in super-class, but might be tweaked in hw_config
+    # BUTTONS is empty, since they are behind a shift-register
     if not getattr(self,"button_names",None):
-      self.button_names = ["A", "B", "C", "D"]
+      self.button_names = ["A", "B", "C", "D", "E"]
     if not getattr(self,"w_button_names",None):
-      self.w_button_names = ["A", "B", "C", "D"]
+      self.w_button_names = ["A", "B", "C", "D", "E"]
+
+  # --- deep-sleep   ---------------------------------------------------------
+
+  def deep_sleep(self, alarms=[], wakeup=None):
+    """ activate deep-sleep.
+    When running on batteries, this is never called because shutdown() turns
+    power off. Otherwise, deep-sleep is a fake deep-sleep.
+    For this special board, the buttons don't trigger a wakeup, since they are
+    behind a shift-register. So don't enter (fake) deep-sleep but loop instead
+    and wait until wakeup expires or a button is pressed.
+    """
+
+    if not wakeup:
+      wakeup = sys.maxsize
+    keys = self.keypad()
+    self.msg(f"{board.board_id}: deep-sleep: loop until wakeup or button")
+    alarm.sleep_memory[0] = 0
+    while time.time() < wakeup:
+      if keys:
+        ev = keys.events.get()
+        if ev and ev.pressed:
+          alarm.sleep_memory[0] = ev.key_number
+          break
+      time.sleep(0.1)
+    self.reset()
+
+  # --- turn power off   -----------------------------------------------------
 
   def shutdown(self, wakeup):
-    """ turn off power by pulling enable pin low """
-    self._wait_for_display()
+    """ turn off power by pulling enable pin low. This is a noop when running
+    on usb-power.
+    """
+    #self._wait_for_display()
     if wakeup and self._rtc_ext:
       self._rtc_ext.set_alarm(wakeup)
-    board.ENABLE_DIO.value = 0
+    board.POWER_OFF()
+
+  # --- helper method: don't turn power off while busy   ---------------------
 
   def _wait_for_display(self):
     """ wait for display update to finish """
@@ -53,6 +85,8 @@ class HALInkyFrame57(HalBase):
         # i.e. busy-pin is high, so no longer busy
         return
 
+  # --- use a keypad based on class ShiftRegisterKeys   ----------------------
+
   def get_keypad(self, hal):
     """ return configured keypad """
 
@@ -64,5 +98,27 @@ class HALInkyFrame57(HalBase):
       value_to_latch = True,
       value_when_pressed = True
       )
+
+  # --- query wake-pin   -----------------------------------------------------
+
+  def get_wake_button(self):
+    """ return wake button index or None (e.g. for time-alarm) """
+
+    if supervisor.runtime.usb_connected:
+      # waking up from fake deep-sleep
+      if alarm.sleep_memory[0]:
+        index = 7 - int(alarm.sleep_memory[0])
+        self.msg(f"{board.board_id}: wake-button from fake deep-sleep: {index}")
+        return index
+      else:
+        return None
+
+    # else query real wake up button
+    for index, pin in enumerate([board.KEYCODES.SW_A, board.KEYCODES.SW_B,
+                                 board.KEYCODES.SW_C, board.KEYCODES.SW_D,
+                                 board.KEYCODES.SW_E,]):
+      if board.ON_RESET_PRESSED(pin):
+        return index
+    return None
 
 impl = HALInkyFrame57()
