@@ -22,6 +22,9 @@ except:
   hw_config = Settings()
 
 class HalBase:
+
+  # --- constructor   ----------------------------------------------------------
+
   def __init__(self):
     """ constructor """
     self.debug = False
@@ -47,9 +50,13 @@ class HalBase:
     # run init() (override in hw_config)
     self.init(self)
 
+  # --- initialization   -------------------------------------------------------
+
   def init(self, hal):
     """ generic initialization. Must be overriden in hw_config """
     pass
+
+  # --- initialize LED/neopixel   ----------------------------------------------
 
   def _init_led(self):
     """ initialize LED/Neopixel """
@@ -71,10 +78,14 @@ class HalBase:
         self._led = DigitalInOut(led)
         self._led.direction = Direction.OUTPUT
 
+  # --- print debug message   --------------------------------------------------
+
   def msg(self,*args):
     """ print debug-message """
     if self.debug:
       print(*args)
+
+  # --- set LED   --------------------------------------------------------------
 
   def led(self,value,color=[255,0,0]):
     """ set status LED/Neopixel """
@@ -91,6 +102,8 @@ class HalBase:
     elif hasattr(self,'_led'):
       self._led.value = value
 
+  # --- query battery level   --------------------------------------------------
+
   def bat_level(self):
     """ return battery level """
     if hasattr(board,"VOLTAGE_MONITOR"):
@@ -102,16 +115,22 @@ class HalBase:
     else:
       return 0.0
 
+  # --- return wifi-implementation (factory)   ---------------------------------
+
   def get_wifi(self,debug=False):
     """ return wifi-interface """
     from ..wifi_impl_builtin import WifiImpl
     return WifiImpl(debug=debug)
+
+  # --- return wifi-instance   -------------------------------------------------
 
   def wifi(self,debug=False):
     """ return wifi-interface """
     if not self._wifi:
       self._wifi = self.get_wifi(debug=debug)
     return self._wifi
+
+  # --- return display (factory)   ---------------------------------------------
 
   def get_display(self, hal):
     """ return display.
@@ -120,11 +139,15 @@ class HalBase:
     """
     return self.DISPLAY
 
+  # --- return display-instance   ----------------------------------------------
+
   def display(self):
     """ return display """
     if not self._display:
       self._display = self.get_display(self)
     return self._display
+
+  # --- return external RTC (factory)   ----------------------------------------
 
   def get_rtc_ext(self, net_update=False, debug=False):
     """ default implementation: try to create RTC by name """
@@ -160,11 +183,15 @@ class HalBase:
         self.msg(f"Reason: {ex3}")
       return None
 
+  # --- return external RTC-instance   -----------------------------------------
+
   def rtc_ext(self,net_update=False,debug=False):
     """ return external rtc, if available """
     if not self._rtc_ext:
       self._rtc_ext =  self.get_rtc_ext(net_update=net_update,debug=debug)
     return self._rtc_ext
+
+  # --- update RTCs (internal and external)   ----------------------------------
 
   def update_rtc(self, ts):
     """ update internal and external RTC.
@@ -176,11 +203,15 @@ class HalBase:
     rtc_ext = self.rtc_ext()
     rtc_ext.update(new_time=ts)
 
+  # --- shutdown with optional wakeup   ----------------------------------------
+
   def shutdown(self, wakeup):
     """ shutdown system.
     Needs override in subclass or hw_config
     """
     pass
+
+  # --- add at-exit processing   -----------------------------------------------
 
   def at_exit(self):
     """ exit processing """
@@ -200,9 +231,13 @@ class HalBase:
     except:
       pass
 
+  # --- sleep   ----------------------------------------------------------------
+
   def sleep(self,duration):
     """ sleep for the given duration in seconds """
     time.sleep(duration)
+
+  # --- return keypad (factory)   ----------------------------------------------
 
   def get_keypad(self, hal):
     """ return configured keypad. """
@@ -215,11 +250,15 @@ class HalBase:
                          )
     return None
 
+  # --- return keypad-instance   -----------------------------------------------
+
   def keypad(self):
     """ return configured keypad. """
     if not self._keypad:
       self._keypad = self.get_keypad(self)
     return self._keypad
+
+  # --- return pin-alarms   ----------------------------------------------------
 
   def get_pin_alarms(self, hal):
     """ return pin-alarms
@@ -244,6 +283,8 @@ class HalBase:
                                        value=value, edge=edge, pull=pull))
     return alarms
 
+  # --- enter deep-sleep   -----------------------------------------------------
+
   def deep_sleep(self, alarms=[], wakeup=None):
     """ activate deep-sleep.
     The default merges all alarms passed as arguments with
@@ -264,12 +305,16 @@ class HalBase:
       while True:
         time.sleep(1)
 
+  # --- read NVRAM   -----------------------------------------------------------
+
   def nvram_read(self, offset, count):
     """ read data from nvram """
     import microcontroller
     if not microcontroller.nvm:
       raise NotImplementedError("nvram not available for this platform")
     return microcontroller.nvm[offset:offset+count]
+
+  # --- write NVRAM   ----------------------------------------------------------
 
   def nvram_write(self, offset, data):
     """ write data to nvram """
@@ -278,16 +323,22 @@ class HalBase:
       raise NotImplementedError("nvram not available for this platform")
     microcontroller.nvm[offset:offset+len(data)] = data
 
+  # --- reset device   ---------------------------------------------------------
+
   def reset(self):
     """ reset device """
     import microcontroller
     microcontroller.reset()
+
+  # --- restart with given code-file   -----------------------------------------
 
   def start_code_file(self, name):
     """ emulate supervisor.set_next_code_file()+supervisor.reload() """
     import supervisor
     supervisor.set_next_code_file(name)
     supervisor.reload()
+
+  # --- query wake button   ----------------------------------------------------
 
   def get_wake_button(self):
     """ return wake button index or None (e.g. for time-alarm) """
