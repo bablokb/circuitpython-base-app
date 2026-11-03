@@ -44,15 +44,15 @@ class HALInkyFrame57(HalBase):
 
     if not wakeup:
       wakeup = sys.maxsize
-    keys = self.keypad()
     self.msg(f"{board.board_id}: deep-sleep: loop until wakeup or button")
-    alarm.sleep_memory[0] = 0
+    alarm.sleep_memory[0] = 42
+    alarm.sleep_memory[1] = 99
     while time.time() < wakeup:
-      if keys:
-        ev = keys.events.get()
-        if ev and ev.pressed:
-          alarm.sleep_memory[0] = ev.key_number
-          break
+      ev = self.get_key_event()
+      if ev:
+        self.msg(f"{board.board_id}: deep-sleep: button {ev[0]} pressed")
+        alarm.sleep_memory[1] = ev[0]
+        break
       time.sleep(0.1)
     self.reset()
 
@@ -99,15 +99,26 @@ class HALInkyFrame57(HalBase):
       value_when_pressed = True
       )
 
+  # --- return next pending key event   ----------------------------------------
+
+  def get_key_event(self, ignore_released=True):
+    """ return next key event. Override base class behavior."""
+
+    ev = super().get_key_event(ignore_released=ignore_released)
+    if ev and ev[0] > 2:
+      return (7-ev[0], ev[1])
+    return None
+
   # --- query wake-pin   -----------------------------------------------------
 
   def get_wake_button(self):
     """ return wake button index or None (e.g. for time-alarm) """
 
-    if supervisor.runtime.usb_connected:
+    self.msg(f"{board.board_id}: _get_wake_button() mit {int(alarm.sleep_memory[0])}")
+    if int(alarm.sleep_memory[0]) == 42:
       # waking up from fake deep-sleep
-      if alarm.sleep_memory[0]:
-        index = 7 - int(alarm.sleep_memory[0])
+      index = int(alarm.sleep_memory[1])
+      if index < 5:
         self.msg(f"{board.board_id}: wake-button from fake deep-sleep: {index}")
         return index
       else:
