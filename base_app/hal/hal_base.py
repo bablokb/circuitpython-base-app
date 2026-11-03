@@ -258,6 +258,25 @@ class HalBase:
       self._keypad = self.get_keypad(self)
     return self._keypad
 
+  # --- return next pending key event   ----------------------------------------
+
+  def get_key_event(self, ignore_released=True):
+    """ return next key event. This does not return an object of type
+    keypad.Event, but a tuple (key_number, event) to allow
+    subclasses to manipulate the key-number before returning them.
+    """
+
+    keys = self.keypad()
+    if not keys:                 # no keypad defined
+      return None
+    ev = keys.events.get()
+    while ev:
+      if ignore_released and ev.released:    # skip release events
+        ev = keys.events.get()
+        continue
+      return (ev.key_number, ev)
+    return None                   # no pending button event
+
   # --- return pin-alarms   ----------------------------------------------------
 
   def get_pin_alarms(self, hal):

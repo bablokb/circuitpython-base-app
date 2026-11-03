@@ -77,7 +77,7 @@ Currently supported attributes and methods:
   - `sleep(duration)`: Sleep implementation.
   - `get_keypad(hal)`: Factory method for creating a `Keypad` object. The
     default uses the GPIOs defined with `BUTTONS`.
-  - `check_key(name)`: Test if a given key has been pressed.
+  - `get_key_event()`: Return pending key event.
   - `get_pin_alarms(hal)`: Return a list of pin-alarms defined for this board.
   - `deep_sleep(alarms=[], wakeup=None)`: Implement deep-sleep.
   - `nvram_read(offset, count)`: Read bytes from NVRAM.
