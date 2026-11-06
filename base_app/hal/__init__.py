@@ -19,26 +19,27 @@ import board
 # All hal implementations are within base_app/hal/. Filenames must be
 # sanitized board.board_id.py, e.g. src/hal/pimoroni_inky_frame_5_7.py
 
-def get_hal(msg_printer=None):
+LOG_SRC = "get_hal"
+def get_hal(log=None):
   """ read and return hal-object """
 
   try:
     hal_file = "base_app.hal."+board.board_id.replace(".","_")
     hal_module = builtins.__import__(hal_file,None,None,["impl"],0)
-    if msg_printer:
-      msg_printer("using board-specific implementation")
+    if log:
+      log(LOG_SRC, "using board-specific implementation")
   except Exception as ex:
-    if msg_printer:
-      msg_printer(f"info: no board specific HAL (ex: {ex})")
+    if log:
+      log(LOG_SRC, f"info: no board specific HAL (ex: {ex})")
     if board.board_id.startswith("RASPBERRY_PI"):
       # use GENERIC_LINUX_PC
       hal_file = "base_app.hal.GENERIC_LINUX_PC"
-      if msg_printer:
-        msg_printer("info: using HAL from GENERIC_LINUX_PC instead")
+      if log:
+        log(LOG_SRC, "info: using HAL from GENERIC_LINUX_PC instead")
     else:
       hal_file = "base_app.hal.hal_default"
-      if msg_printer:
-        msg_printer("info: using default implementation from HalBase")
+      if log:
+        log(LOG_SRC, "info: using default implementation from HalBase")
 
   hal_module = builtins.__import__(hal_file,None,None,["impl"],0)
   return hal_module.impl

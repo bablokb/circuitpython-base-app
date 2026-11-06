@@ -17,6 +17,7 @@ import supervisor
 
 from .hal_base import HalBase
 
+LOG_SRC = "HalBadger2350"
 class HalBadger2350(HalBase):
   """ Badger2350 specific HAL-class """
 
@@ -83,12 +84,12 @@ class HalBadger2350(HalBase):
     try:
       import alarm
       all_alarms = self.get_pin_alarms(self)
-      self.msg(f"deep_sleep(): added {len(all_alarms)} internal alarms")
+      self.log(LOG_SRC, f"deep_sleep(): added {len(all_alarms)} internal alarms")
       all_alarms.extend(alarms)
-      self.msg(f"deep_sleep(): added {len(alarms)} from arguments")
+      self.log(LOG_SRC, f"deep_sleep(): added {len(alarms)} from arguments")
       if wakeup:
         all_alarms.append(alarm.time.TimeAlarm(epoch_time=wakeup))
-        self.msg("deep_sleep(): added TimeAlarm from argument")
+        self.log(LOG_SRC, "deep_sleep(): added TimeAlarm from argument")
 
       # test for serial-connection
       if self._keypad:
@@ -96,7 +97,7 @@ class HalBadger2350(HalBase):
       if supervisor.runtime.usb_connected:
         # this will lead to a fake sleep, so don't preserve
         # button DIOs
-        self.msg("deep_sleep(): connected: starting fake deep-sleep")
+        self.log(LOG_SRC, "deep_sleep(): connected: starting fake deep-sleep")
         alarm.exit_and_deep_sleep_until_alarms(*all_alarms)
 
       # else try to create DIOs to preserve state
@@ -116,7 +117,7 @@ class HalBadger2350(HalBase):
         alarm.exit_and_deep_sleep_until_alarms(*all_alarms)
         
     except Exception as ex:
-      self.msg(f"could not enter deep-sleep. Exception: {ex}")
+      self.log(LOG_SRC, f"could not enter deep-sleep. Exception: {ex}")
       while True:
         time.sleep(1)
 

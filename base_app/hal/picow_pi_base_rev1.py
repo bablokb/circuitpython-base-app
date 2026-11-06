@@ -15,6 +15,7 @@ from .hal_base import HalBase
 
 DONE_PIN  = board.GP4
 
+LOG_SRC = "HalPicoPiBase"
 class HalPicoPiBase(HalBase):
   """ pico-pi-base specific HAL-class """
 
@@ -36,7 +37,7 @@ class HalPicoPiBase(HalBase):
 
   def shutdown(self, wakeup):
     """ turn off power by pulling GP4 high """
-    self.msg("HalPicoPiBase.shutdown() started")
+    self.log(LOG_SRC, "shutdown() started")
     if wakeup and self._rtc_ext:
       self._rtc_ext.set_alarm(wakeup)
     self._done.value = 1

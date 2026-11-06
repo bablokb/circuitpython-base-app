@@ -61,11 +61,11 @@ Currently supported attributes and methods:
   - `init(hal)`: one-time initialization, e.g. to mount a SD
   - `led(value,color=[255,0,0])`: A method to override led blink behavior.
   - `bat_level()`: A method to return the battery level.
-  - `get_wifi(debug=False)`: Factory method for the wifi-interface. Needed
+  - `get_wifi()`: Factory method for the wifi-interface. Needed
     for non-native wifi-implementations (e.g. using a Wiznet-chip or an
     ESP32AT-coprocessor).
   - `get_display(hal)`: Factory method to create a display-object.
-  - `get_rtc_ext(net_update=False, debug=False)`: Factory method for
+  - `get_rtc_ext(net_update=False)`: Factory method for
     non-standard RTCs.
   - `update_rtc(ts)`: Update RTC (internal and external). Needed only
     for non-standard RTCs.

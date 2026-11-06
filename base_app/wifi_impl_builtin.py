@@ -15,18 +15,19 @@ import adafruit_requests
 
 from settings import secrets
 
+LOG_SRC = "Wifi"
 class WifiImpl:
   """ Wifi-implementation for MCU with integrated wifi """
 
   # --- constructor   --------------------------------------------------------
 
   _wifi_impl = None
-  def __new__(cls,debug=False):
+  def __new__(cls):
     if WifiImpl._wifi_impl:
       return WifiImpl._wifi_impl
     return super(WifiImpl,cls).__new__(cls)
 
-  def __init__(self,debug=False):
+  def __init__(self):
     """ constructor """
 
     if not hasattr(secrets,'channel'):
@@ -34,13 +35,18 @@ class WifiImpl:
     if not hasattr(secrets,'timeout'):
       secrets.timeout = None
 
-    self._debug    = debug
     self._radio    = None
     self._pool     = None
     self._requests = None
     self._socket   = None
 
     WifiImpl._wifi_impl = self
+
+  # --- print debug-message   ------------------------------------------------
+
+  def log(self, src, text):
+    """ print (debug) message. Override from application """
+    pass
 
   # --- initialze and connect to AP and to remote-port   ---------------------
 
@@ -55,8 +61,7 @@ class WifiImpl:
     if self._pool:
       return
 
-    if self._debug:
-      print("connecting to %s" % secrets.ssid)
+    self.log(LOG_SRC, "connecting to %s" % secrets.ssid)
     retries = secrets.retry
     while True:
       try:
@@ -67,15 +72,13 @@ class WifiImpl:
                            )
         break
       except:
-        if self._debug:
-          print("could not connect to %s" % secrets.ssid)
+        self.log(LOG_SRC, "could not connect to %s" % secrets.ssid)
         retries -= 1
         if retries == 0:
           raise
         time.sleep(1)
         continue
-    if self._debug:
-      print("connected to %s" % secrets.ssid)
+    self.log(LOG_SRC, "connected to %s" % secrets.ssid)
     self._pool = socketpool.SocketPool(self._radio)
     self._requests = None
 
@@ -121,8 +124,7 @@ class WifiImpl:
   def get(self,url):
     """ process get-request """
     self.connect()
-    if self._debug:
-      print(f"wifi: get({url})")
+    self.log(LOG_SRC, f"wifi: get({url})")
     return self.requests.get(url)
 
   # --- execute transmit-command   ------------------------------------------
@@ -130,8 +132,7 @@ class WifiImpl:
   def sendto(self,data,udp_ip,udp_port):
     """ send to given destination """
     self.connect()
-    if self._debug:
-      print(f"wifi: send to {udp_ip}:{udp_port}")
+    self.log(LOG_SRC, f"wifi: send to {udp_ip}:{udp_port}")
     with self._pool.socket(family=socketpool.SocketPool.AF_INET,
                            type=socketpool.SocketPool.SOCK_DGRAM) as socket:
       socket.sendto(data,(udp_ip,udp_port))

@@ -23,10 +23,13 @@ from settings import app_config
 class WifiImpl:
   """ request-implementation using sockets from CPython """
 
-  def __init__(self,debug=False):
+  def __init__(self):
     """ constructor """
-    self.debug = debug
     self._requests = None
+
+  def log(self, src, text):
+    """ print (debug) message. Override from application """
+    pass
 
   def get(self,url):
     return self.requests.get(url)
@@ -74,6 +77,7 @@ class WifiImpl:
     """ noop - we assume we are always connected """
     pass
 
+LOG_SRC = "HalPygame"
 class HalPygame(HalBase):
   """ GENERIC_LINUX_PC specific HAL-class """
 
@@ -97,9 +101,9 @@ class HalPygame(HalBase):
     """ set status LED (not-supported)"""
     pass
 
-  def get_wifi(self,debug=False):
+  def get_wifi(self):
     """ return wifi-interface """
-    return WifiImpl(debug=debug)
+    return WifiImpl()
 
   def shutdown(self, wakeup):
     """ process shutdown request.
@@ -116,10 +120,10 @@ class HalPygame(HalBase):
 
     if not getattr(self, "shutdown_emulate", False):
       # noop
-      self.msg(f"{board.board_id}: shutdown() is a noop")
+      self.log(LOG_SRC, f"shutdown() is a noop")
       return
     delay = getattr(self, "shutdown_delay", 0)
-    self.msg(f"emulating shutdown after waiting {delay}s")
+    self.log(LOG_SRC, f"emulating shutdown after waiting {delay}s")
     self.sleep(delay)
     sys.exit(0)
 
@@ -169,8 +173,7 @@ class HalPygame(HalBase):
           )
 
       keys = self.keypad()
-      self.msg(f"{board.board_id}: deep-sleep()" +
-               f"{' with wake keys' if keys else ''}")
+      self.log(LOG_SRC, f"deep-sleep(){' with wake keys' if keys else ''}")
       while time.time() < wakeup:
         if self._display.check_quit():
           sys.exit(0)
@@ -218,13 +221,12 @@ class HalPygame(HalBase):
     args = [sys.executable, "./main.py"]
     if not self._wake_pin is None:
       args.append(f"{self._wake_pin}")
-    self.msg(f"{board.board_id}: reset(): exec {' '.join(args)}")
+    self.log(LOG_SRC, f"reset(): exec {' '.join(args)}")
     os.execv(sys.executable, args)
 
   def start_code_file(self,name):
     """ emulate supervisor.set_next_code_file()+supervisor.reload() """
-    self.msg(
-      f"{board.board_id}: starting '{sys.executable} {name}'")
+    self.log(LOG_SRC, f"starting '{sys.executable} {name}'")
     sys.stdout.flush()
     sys.stderr.flush()
     os.execv(sys.executable, [sys.executable, name])

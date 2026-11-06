@@ -18,11 +18,11 @@ class ExtNoRTC(ExtBase):
 
   # --- constructor   --------------------------------------------------------
 
-  def __init__(self,i2c, wifi=None, net_update=False, debug=False):
+  def __init__(self,i2c, wifi=None, net_update=False):
     """ constructor """
 
     self._unset = True
-    super().__init__(rtc.RTC(),wifi=wifi,net_update=net_update, debug=debug)
+    super().__init__(rtc.RTC(),wifi=wifi,net_update=net_update)
 
   # --- check power-state   --------------------------------------------------
 

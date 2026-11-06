@@ -18,6 +18,7 @@ except:
 
 # --- class ExtBase   ----------------------------------------------------------
 
+LOG_SRC = "ExtRTC"
 class ExtBase:
 
   TIME_SOURCE_NONE = 0       # no time source
@@ -29,7 +30,7 @@ class ExtBase:
   # --- factory for supported external RTCs   --------------------------------
 
   @classmethod
-  def create(cls,rtc_name,bus,wifi=None,net_update=False,debug=False):
+  def create(cls,rtc_name,bus,wifi=None,net_update=False):
     """ create ExtRTC-object for given RTC-name """
     if not rtc_name:
       rtc_name = "NoRTC"
@@ -38,18 +39,16 @@ class ExtBase:
     the_module = builtins.__import__(f"base_app.rtc_ext.{rtc_classfile}",
                                      None,None,[rtc_classfile],0)
     rtc_class = getattr(the_module,rtc_classname)
-    return rtc_class(bus,wifi=wifi,net_update=net_update,debug=debug)
+    return rtc_class(bus,wifi=wifi,net_update=net_update)
 
   # --- constructor   --------------------------------------------------------
 
-  def __init__(self,rtc_ext,rtc_int=_dev_rtc,
-               wifi=None,net_update=False,debug=False):
+  def __init__(self, rtc_ext, rtc_int=_dev_rtc, wifi=None, net_update=False):
     """ constructor """
 
     self._rtc_ext    = rtc_ext
     self._wifi       = wifi
     self._net_update = net_update
-    self._debug      = debug
     self._rtc_int    = rtc_int
     self._init_rtc()             # basic settings, clear alarms etc.
 
@@ -63,27 +62,22 @@ class ExtBase:
 
   # --- print debug-message   ------------------------------------------------
 
-  def _msg(self,text):
-    """ print (debug) message """
-    if self._debug:
-      print(text)
+  def log(self, src, text):
+    """ print (debug) message. Override from application """
+    pass
 
-  # --- print struct_time   --------------------------------------------------
+  # --- format time   --------------------------------------------------------
 
-  def print_ts(self,label,ts):
-    """ print epoch-time or struct_time """
+  def format_time(self, ts, label=""):
+    """ format epoch-time or struct_time """
     if isinstance(ts,int):
       ts = time.localtime(ts)
-    if label:
-      self._msg("%s: %04d-%02d-%02d %02d:%02d:%02d" %
-                (label,ts.tm_year,ts.tm_mon,ts.tm_mday,
-                 ts.tm_hour,ts.tm_min,ts.tm_sec)
-                )
-    else:
-      return "%04d-%02d-%02d %02d:%02d:%02d" % (
-        ts.tm_year,ts.tm_mon,ts.tm_mday,
-        ts.tm_hour,ts.tm_min,ts.tm_sec
-        )
+    if label and label[-1] != " ":
+      label = label + " "
+    return "%s%04d-%02d-%02d %02d:%02d:%02d" % (
+      label,ts.tm_year,ts.tm_mon,ts.tm_mday,
+      ts.tm_hour,ts.tm_min,ts.tm_sec
+      )
 
   # --- get alarm-time   ----------------------------------------------------
 
@@ -103,7 +97,7 @@ class ExtBase:
     if sleep_time == 0:
       return
     alarm_time = time.localtime(time.time() + sleep_time)
-    self.print_ts("rtc: next wakeup",alarm_time)
+    self.log(LOG_SRC, self.format_time(alarm_time, "next wakeup"))
     return alarm_time
 
   # --- get alarm from table   ---------------------------------------------
@@ -132,9 +126,9 @@ class ExtBase:
                              now_ts.tm_min*60 +
                              now_ts.tm_sec)
 
-    self._msg("rtc: looking up next boot from time-table")
-    self.print_ts("rtc: now",now_ts)
-    self._msg(f"rtc: weekday: {now_day}")
+    self.log(LOG_SRC, "looking up next boot from time-table")
+    self.log(LOG_SRC, self.format_time(now_ts, "now"))
+    self.log(LOG_SRC, f"weekday: {now_day}")
 
     # search table (wrap-around, starting from current weekday)
     for i in range(now_day,now_day+7,1):
@@ -152,7 +146,7 @@ class ExtBase:
           alarm_epoch = sod + h*3600 + m*60
           if alarm_epoch > now_epoch+min_delta:
             next_alarm = time.localtime(alarm_epoch)
-            self.print_ts("rtc: next alarm",next_alarm)
+            self.log(LOG_SRC, self.format_time(next_alarm, "next alarm"))
             return next_alarm
 
       # no suitable time-point today. Try next day
@@ -193,37 +187,39 @@ class ExtBase:
       # externally provided time
       if isinstance(new_time,int):
         new_time = time.localtime(new_time)
-      self._msg("rtc: updating RTCs from provided time")
+      self.log(LOG_SRC, "updating RTCs from provided time")
       self._rtc_ext.datetime = new_time
       self._rtc_int.datetime = new_time
-      self.print_ts("rtc: new time",new_time)
+      self.log(LOG_SRC, self.format_time(new_time, "new time"))
       return ExtBase.TIME_SOURCE_SET
 
     # update internal rtc to valid date
-    self.print_ts("rtc: int-rtc time",self._rtc_int.datetime)
+    self.log(LOG_SRC,
+             self.format_time(self._rtc_int.datetime, "int-rtc time"))
     if force or self._check_rtc(self._rtc_int):
       if force or self._lost_power() or self._check_rtc(self._rtc_ext):
-        self.print_ts("rtc: ext-rtc time",self._rtc_ext.datetime)
+        self.log(LOG_SRC,
+                 self.format_time(self._rtc_ext.datetime, "ext-rtc time"))
         if not self._fetch_time():
-          self._msg("rtc: ext-rtc not updated from time-server")
-          self._msg("rtc: setting ext-rtc to 2022-01-01 12:00:00")
+          self.log(LOG_SRC, "ext-rtc not updated from time-server")
+          self.log(LOG_SRC, "setting ext-rtc to 2022-01-01 12:00:00")
           self._rtc_ext.datetime = time.struct_time((2022,1,1,12,00,00,5,1,-1))
           rc = ExtBase.TIME_SOURCE_NONE
         else:
-          self._msg("rtc: ext-rtc updated from time-server")
+          self.log(LOG_SRC, "ext-rtc updated from time-server")
           rc = ExtBase.TIME_SOURCE_NET
       else:
         rc = ExtBase.TIME_SOURCE_EXT
-      self._msg("rtc: updating internal rtc from external rtc")
+      self.log(LOG_SRC, "updating internal rtc from external rtc")
       ext_ts = self._rtc_ext.datetime   # needs two statements!
       self._rtc_int.datetime = ext_ts
-      self.print_ts("rtc: new time",ext_ts)
+      self.log(LOG_SRC, self.format_time(ext_ts, "new time"))
     else:
       # this will typically happen when starting from Thonny
-      self._msg("rtc: assuming valid rtc int")
+      self.log(LOG_SRC, "assuming valid rtc int")
       int_ts = self._rtc_int.datetime   # needs two statements!
       self._rtc_ext.datetime = int_ts
-      self._msg("rtc: updated external rtc from internal rtc")
+      self.log(LOG_SRC, "updated external rtc from internal rtc")
       rc = ExtBase.TIME_SOURCE_INT
     return rc
 
@@ -233,13 +229,13 @@ class ExtBase:
     """ update time from time-server """
 
     if not self._net_update:
-      self._msg("rtc: net_update not set")
+      self.log(LOG_SRC, "net_update not set")
       return False
 
     from settings import secrets
     time_url = getattr(secrets,"time_url",None)
     if not time_url:
-      self._msg(f"rtc: time-server not configured, not updating")
+      self.log(LOG_SRC, f"time-server not configured, not updating")
       return False
 
     try:
@@ -247,7 +243,7 @@ class ExtBase:
         self._init_wifi()
       response = self._wifi.get(time_url).json()
     except Exception as ex:
-      self._msg(f"rtc: update from time-server failed (no wifi?): {ex}")
+      self.log(LOG_SRC, f"update from time-server failed (no wifi?): {ex}")
       return False
 
     if 'struct_time' in response:

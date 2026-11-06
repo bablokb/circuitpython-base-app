@@ -44,13 +44,13 @@ class HALInkyFrame57(HalBase):
 
     if not wakeup:
       wakeup = sys.maxsize
-    self.msg(f"{board.board_id}: deep-sleep: loop until wakeup or button")
+    self.log(LOG_SRC, "deep-sleep(): loop until wakeup or button")
     alarm.sleep_memory[0] = 42
     alarm.sleep_memory[1] = 99
     while time.time() < wakeup:
       ev = self.get_key_event()
       if ev:
-        self.msg(f"{board.board_id}: deep-sleep: button {ev[0]} pressed")
+        self.log(LOG_SRC, f"deep-sleep(): button {ev[0]} pressed")
         alarm.sleep_memory[1] = ev[0]
         break
       time.sleep(0.1)
@@ -114,12 +114,13 @@ class HALInkyFrame57(HalBase):
   def get_wake_button(self):
     """ return wake button index or None (e.g. for time-alarm) """
 
-    self.msg(f"{board.board_id}: _get_wake_button() mit {int(alarm.sleep_memory[0])}")
+    self.log(LOG_SRC,
+             f"get_wake_button(): sleep_memory[0] = {int(alarm.sleep_memory[0])}")
     if int(alarm.sleep_memory[0]) == 42:
       # waking up from fake deep-sleep
       index = int(alarm.sleep_memory[1])
       if index < 5:
-        self.msg(f"{board.board_id}: wake-button from fake deep-sleep: {index}")
+        self.log(LOG_SRC, f"get_wake_button(): wake-button-index = {index}")
         return index
       else:
         return None

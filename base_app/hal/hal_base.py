@@ -21,6 +21,7 @@ except:
     pass
   hw_config = Settings()
 
+LOG_SRC = "HalBase"
 class HalBase:
 
   # --- constructor   ----------------------------------------------------------
@@ -78,12 +79,11 @@ class HalBase:
         self._led = DigitalInOut(led)
         self._led.direction = Direction.OUTPUT
 
-  # --- print debug message   --------------------------------------------------
+  # --- print debug-message   ------------------------------------------------
 
-  def msg(self,*args):
-    """ print debug-message """
-    if self.debug:
-      print(*args)
+  def log(self, src, text):
+    """ print (debug) message. Override from application """
+    pass
 
   # --- set LED   --------------------------------------------------------------
 
@@ -117,17 +117,17 @@ class HalBase:
 
   # --- return wifi-implementation (factory)   ---------------------------------
 
-  def get_wifi(self,debug=False):
+  def get_wifi(self):
     """ return wifi-interface """
     from ..wifi_impl_builtin import WifiImpl
-    return WifiImpl(debug=debug)
+    return WifiImpl()
 
   # --- return wifi-instance   -------------------------------------------------
 
-  def wifi(self,debug=False):
+  def wifi(self):
     """ return wifi-interface """
     if not self._wifi:
-      self._wifi = self.get_wifi(debug=debug)
+      self._wifi = self.get_wifi()
     return self._wifi
 
   # --- return display (factory)   ---------------------------------------------
@@ -149,7 +149,7 @@ class HalBase:
 
   # --- return external RTC (factory)   ----------------------------------------
 
-  def get_rtc_ext(self, net_update=False, debug=False):
+  def get_rtc_ext(self, net_update=False):
     """ default implementation: try to create RTC by name """
     try:
       from base_app.rtc_ext.ext_base import ExtBase
@@ -159,11 +159,11 @@ class HalBase:
       if _rtc in ["NoRTC", "OsRTC"]:
         # these RTCs don't need the I2C-bus
         try:
-          return ExtBase.create(_rtc,None,net_update=net_update,debug=debug)
+          return ExtBase.create(_rtc,None,net_update=net_update)
         except Exception as ex2:
           # this is not expected to happen
-          self.msg(f"Could not create {_rtc}")
-          self.msg(f"Reason: {ex2}")
+          self.log(LOG_SRC, f"Could not create {_rtc}")
+          self.log(LOG_SRC, f"Reason: {ex2}")
           return None
 
       if self.I2C:
@@ -171,24 +171,23 @@ class HalBase:
       else:
         import busio
         self._i2c = busio.I2C(self.SCL,self.SDA)
-      return ExtBase.create(_rtc,self._i2c,net_update=net_update,debug=debug)
+      return ExtBase.create(_rtc,self._i2c,net_update=net_update)
     except Exception as ex:
-      if debug:
-        self.msg(f"Could not create RTC for {RTC}. Falling back to NoRTC.")
-        self.msg(f"Reason: {ex}")
+      self.log(LOG_SRC, f"Could not create RTC for {RTC}. Falling back to NoRTC.")
+      self.log(LOG_SRC, f"Reason: {ex}")
       try:
-        return ExtBase.create("NoRTC",None,net_update=net_update,debug=debug)
+        return ExtBase.create("NoRTC",None,net_update=net_update)
       except Exception as ex3:
-        self.msg("Could not create NoRTC")
-        self.msg(f"Reason: {ex3}")
+        self.log(LOG_SRC, "Could not create NoRTC")
+        self.log(LOG_SRC, f"Reason: {ex3}")
       return None
 
   # --- return external RTC-instance   -----------------------------------------
 
-  def rtc_ext(self,net_update=False,debug=False):
+  def rtc_ext(self,net_update=False):
     """ return external rtc, if available """
     if not self._rtc_ext:
-      self._rtc_ext =  self.get_rtc_ext(net_update=net_update,debug=debug)
+      self._rtc_ext =  self.get_rtc_ext(net_update=net_update)
     return self._rtc_ext
 
   # --- update RTCs (internal and external)   ----------------------------------
@@ -215,7 +214,7 @@ class HalBase:
 
   def at_exit(self):
     """ exit processing """
-    self.msg("hal_base.at_exit()")
+    self.log(LOG_SRC, "hal_base.at_exit()")
     try:
       if not hasattr(board,"DISPLAY"):
         import displayio
@@ -312,15 +311,15 @@ class HalBase:
     try:
       import alarm
       all_alarms = self.get_pin_alarms(self)
-      self.msg(f"deep_sleep(): added {len(all_alarms)} internal alarms")
+      self.log(LOG_SRC, f"deep_sleep(): added {len(all_alarms)} internal alarms")
       all_alarms.extend(alarms)
-      self.msg(f"deep_sleep(): added {len(alarms)} from arguments")
+      self.log(LOG_SRC, f"deep_sleep(): added {len(alarms)} from arguments")
       if wakeup:
         all_alarms.append(alarm.time.TimeAlarm(epoch_time=wakeup))
-        self.msg(f"deep_sleep(): added TimeAlarm from argument")
+        self.log(LOG_SRC, f"deep_sleep(): added TimeAlarm from argument")
       alarm.exit_and_deep_sleep_until_alarms(*all_alarms)
     except Exception as ex:
-      self.msg(f"could not enter deep-sleep. Exception: {ex}")
+      self.log(LOG_SRC, f"could not enter deep-sleep. Exception: {ex}")
       while True:
         time.sleep(1)
 
@@ -377,14 +376,14 @@ class HalBase:
         return None
 
       # test sequentially
-      self.msg(f"get_wake_button(): wake pin: {alarm.wake_alarm.pin}")
+      self.log(LOG_SRC, f"get_wake_button(): wake pin: {alarm.wake_alarm.pin}")
       for index, pin in enumerate(alarm_pins):
         if pin == alarm.wake_alarm.pin:
-          self.msg(f"get_wake_button(): found pin at index {index}")
+          self.log(LOG_SRC, f"get_wake_button(): found pin at index {index}")
           return index
       # no hit
       return None
     except Exception as ex:
       # typically no alarm module
-      self.msg(f"get_wake_button(): could not query wake-button: {ex}")
+      self.log(LOG_SRC, f"get_wake_button(): could not query wake-button: {ex}")
       return None

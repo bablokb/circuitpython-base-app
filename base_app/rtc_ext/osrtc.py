@@ -17,11 +17,11 @@ class ExtOsRTC(ExtBase):
 
   # --- constructor   --------------------------------------------------------
 
-  def __init__(self,i2c,wifi=None,net_update=False,debug=False):
+  def __init__(self,i2c,wifi=None,net_update=False):
     """ constructor """
 
     super().__init__(self, rtc_int=self,
-                     wifi=wifi, net_update=net_update, debug=debug)
+                     wifi=wifi, net_update=net_update)
 
   # --- check power-state   --------------------------------------------------
 

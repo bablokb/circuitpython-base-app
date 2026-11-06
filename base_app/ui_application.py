@@ -19,6 +19,7 @@ from settings import secrets, app_config
 
 # --- application class   ----------------------------------------------------
 
+LOG_SRC = "UIApplication"
 class UIApplication:
 
   RED   = [255,0,0]
@@ -30,7 +31,10 @@ class UIApplication:
     """ constructor """
 
     self._debug = getattr(app_config, "debug", False)
-    self.msg(f"running on board {board.board_id}")
+    # override default logging
+    if hasattr(app_config, "logger"):
+      self.log = app_config.logger(self)
+    self.log(LOG_SRC, f"running on board {board.board_id}")
 
     # run basic hardware configuration (HAL + hw_config)
     self._setup(with_rtc, with_wifi)  # setup hardware
@@ -48,36 +52,53 @@ class UIApplication:
   def _setup(self,with_rtc, with_wifi):
     """ setup hardware """
 
-    self.hal = base_app.hal.get_hal(self.msg)
+    self.hal = base_app.hal.get_hal(self.log)
     self.hal.debug = self._debug
+    if self._debug:
+      self.hal.log = self.log
 
     self.display    = self.hal.display()
     self.is_pygame  = hasattr(self.display,"check_quit")
-    self.wifi       = self.hal.wifi(self._debug) if with_wifi else None
+    self.wifi       = self.hal.wifi()
+    if self._debug:
+      self.wifi.log = self.log
 
     if with_rtc:
       self._rtc_ext = self.hal.rtc_ext(
-        net_update=getattr(secrets,"net_update",False),
-        debug=self._debug)
+        net_update=getattr(secrets,"net_update",False))
+      if self._debug:
+        self._rtc_ext.log = self.log
     else:
       self._rtc_ext = None
     gc.collect()
 
   # --- print debug-message   ------------------------------------------------
 
-  def msg(self,*args):
+  def log_message(self, src, *args):
+    """ format a log message """
+
+    header = f"[{time.monotonic():7.2f}][{src}] "
+    for arg in args:
+      if isinstance(arg, time.struct_time):
+        yield header+"%04d-%02d-%02d %02d:%02d:%02d" % (
+          arg.tm_year, arg.tm_mon, arg.tm_mday,
+          arg.tm_hour, arg.tm_min, arg.tm_sec
+          )
+      elif isinstance(arg, dict):
+        yield f"{header}"+"{"
+        for key, value in arg.items():
+          yield f"{header}  {key}: {value}"
+        yield f"{header}"+"}"
+      else:
+        yield f"{header}{arg}"
+
+  # --- print debug-message   ------------------------------------------------
+
+  def log(self, src, *args):
     """ print (debug) message """
     if self._debug:
-      print(f"ui_application:", end="")
-      for arg in args:
-        if isinstance(arg, time.struct_time):
-          print(" %04d-%02d-%02d %02d:%02d:%02d" % (
-            arg.tm_year, arg.tm_mon, arg.tm_mday,
-            arg.tm_hour, arg.tm_min, arg.tm_sec
-            ), end="")
-        else:
-          print(f" {arg}", end="")
-    print()
+      for line in self.log_message(src, *args):
+        print(line)
 
   # --- blink status-led   ---------------------------------------------------
 
@@ -100,7 +121,7 @@ class UIApplication:
     self._dataprovider.update_data(self.data)
     duration = time.monotonic()-start
     self.blink(blink_time,color=UIApplication.GREEN)
-    self.msg(f"update_data (dataprovider): {duration:f}s")
+    self.log(LOG_SRC, f"update_data (dataprovider): {duration:f}s")
 
   # --- handle data-exception   ----------------------------------------------
 
@@ -112,7 +133,7 @@ class UIApplication:
     start = time.monotonic()
     self.update_display(self._uiprovider.handle_exception(ex, self.data))
     duration = time.monotonic()-start
-    self.msg(f"handle_exception (uiprovider): {duration:f}s")
+    self.log(LOG_SRC, f"handle_exception (uiprovider): {duration:f}s")
 
   # --- create ui   ----------------------------------------------------------
 
@@ -122,7 +143,7 @@ class UIApplication:
     start = time.monotonic()
     self._uiprovider.create_ui(self.display)
     duration = time.monotonic()-start
-    self.msg(f"create_ui (uiprovider): {duration:f}s")
+    self.log(LOG_SRC, f"create_ui (uiprovider): {duration:f}s")
 
   # --- free memory from UI   ------------------------------------------------
 
@@ -130,11 +151,11 @@ class UIApplication:
     """ free memory used by UI and display """
 
     if not self.is_pygame:
-      self.msg(f"free memory before clear of UI: {gc.mem_free()}")
+      self.log(LOG_SRC, f"free memory before clear of UI: {gc.mem_free()}")
       self.display.root_group = None
       self._uiprovider.clear_ui()
       #gc.collect()
-      self.msg(f"free memory after clear of UI: {gc.mem_free()}")
+      self.log(LOG_SRC, f"free memory after clear of UI: {gc.mem_free()}")
 
   # --- update display   -----------------------------------------------------
 
@@ -147,32 +168,32 @@ class UIApplication:
       start = time.monotonic()
       content = self._uiprovider.update_ui(self.data)
       duration = time.monotonic()-start
-      self.msg(f"update_ui (uiprovider): {duration:f}s")
+      self.log(LOG_SRC, f"update_ui (uiprovider): {duration:f}s")
 
     if not content is None:
       start = time.monotonic()
-      self.msg(f"updating root_group with view (len: {len(content)})")
+      self.log(LOG_SRC, f"updating root_group with view (len: {len(content)})")
       self.display.root_group = content  # update root_group ...
 
       # ... and show content on screen
       if hasattr(self.display,"time_to_refresh"):
         if self.display.time_to_refresh > 0.0:
           # ttr will be >0 only if system is on running on USB-power
-          self.msg(f"waiting for time_to_refresh ({self.display.time_to_refresh})")
+          self.log(LOG_SRC, f"waiting for time_to_refresh ({self.display.time_to_refresh})")
           time.sleep(self.display.time_to_refresh)
       try:
-        self.msg("refreshing...")
+        self.log(LOG_SRC, "refreshing...")
         self.display.refresh()
         if hasattr(self.display,"busy"):
-          self.msg("waiting while busy")
+          self.log(LOG_SRC, "waiting while busy")
           while self.display.busy:
             time.sleep(0.1)
       except RuntimeError:
         pass
       duration = time.monotonic()-start
-      self.msg(f"update display: {duration:f}s")
+      self.log(LOG_SRC, f"update display: {duration:f}s")
     else:
-      self.msg("no display update")
+      self.log(LOG_SRC, "no display update")
 
   # --- shutdown device   ----------------------------------------------------
 
@@ -200,22 +221,22 @@ class UIApplication:
           wakeup = self._rtc_ext.get_alarm_time(
             s=getattr(app_config, "run_interval", 60))
       else:
-        self.msg("could not configure wakeup")
+        self.log(LOG_SRC, "could not configure wakeup")
 
     if wakeup is not None:
       # check if wakeup is at least two seconds in the future
       if time.mktime(wakeup)-2 <= time.time():
         # reset at once
-        self.msg("wakeup is in the past, resetting...")
+        self.log(LOG_SRC, "wakeup is in the past, resetting...")
         self.hal.reset()
-      self.msg("configuring shutdown/deep-sleep with wakeup at:", wakeup)
+      self.log(LOG_SRC, "configuring shutdown/deep-sleep with wakeup at:", wakeup)
     else:
-      self.msg("shutdown/deep-sleep without wakeup")
+      self.log(LOG_SRC, "shutdown/deep-sleep without wakeup")
 
     # run shutdown. This could be a noop, so fall back to deep-sleep.
-    self.msg("trying to shutdown the device")
+    self.log(LOG_SRC, "trying to shutdown the device")
     self.hal.shutdown(wakeup)
-    self.msg("falling back to deep-sleep")
+    self.log(LOG_SRC, "falling back to deep-sleep")
     self.hal.deep_sleep(wakeup=time.mktime(wakeup) if wakeup else None)
     return
 
@@ -261,7 +282,7 @@ class UIApplication:
     """ Override in subclass if necessary """
     interval = getattr(app_config, "run_interval", 1)
 
-    self.msg(f"running idle for {interval}s")
+    self.log(LOG_SRC, f"running idle for {interval}s")
     while time.monotonic()-self._run_start < interval:
       if self.process_events():
         return
@@ -280,13 +301,13 @@ class UIApplication:
       self.run_end()
       success = True
     except Exception as ex1:
-      self.msg(f"failed: {ex1=}")
+      self.log(LOG_SRC, f"failed: {ex1=}")
       if not self._debug:
         # don't show trace on device in debug mode (assume serial connection)
         try:
           self.handle_exception(ex1)
         except Exception as ex2:
-          self.msg(f"failed to handle exception: {ex2=}")
+          self.log(LOG_SRC, f"failed to handle exception: {ex2=}")
       else:
         import traceback
         try:
