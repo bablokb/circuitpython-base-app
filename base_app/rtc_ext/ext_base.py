@@ -62,7 +62,7 @@ class ExtBase:
 
   # --- print debug-message   ------------------------------------------------
 
-  def log(self, src, text):
+  def log(self, src, *args):
     """ print (debug) message. Override from application """
     pass
 
