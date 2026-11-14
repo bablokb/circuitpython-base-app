@@ -15,6 +15,7 @@ import supervisor
 
 from .hal_base import HalBase
 
+LOG_SRC = "HALInkyFrame57"
 class HALInkyFrame57(HalBase):
   """ InkyFrame 5.7 specific HAL-class """
 
@@ -43,6 +44,7 @@ class HALInkyFrame57(HalBase):
     """
 
     if not wakeup:
+      import sys
       wakeup = sys.maxsize
     self.log(LOG_SRC, "deep-sleep(): loop until wakeup or button")
     alarm.sleep_memory[0] = 42
